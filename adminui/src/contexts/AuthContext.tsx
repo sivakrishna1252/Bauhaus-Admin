@@ -34,12 +34,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
 
-    // Determine which role context we are in based on the current pathname
-    const currentRole: "ADMIN" | "CLIENT" = pathname.startsWith("/client") ? "CLIENT" : "ADMIN";
+    // Determine which role context we are in
+    const [currentRole, setCurrentRole] = useState<"ADMIN" | "CLIENT" | null>(null);
 
     useEffect(() => {
-        // Load the correct session based on the current route
-        const { tokenKey, userKey } = getStorageKeys(currentRole);
+        // Find which role we have a token for
+        const adminToken = localStorage.getItem("admin_token");
+        const clientToken = localStorage.getItem("client_token");
+
+        if (pathname.startsWith("/admin")) {
+            setCurrentRole("ADMIN");
+        } else if (pathname.startsWith("/client")) {
+            setCurrentRole("CLIENT");
+        } else if (adminToken) {
+            setCurrentRole("ADMIN");
+        } else if (clientToken) {
+            setCurrentRole("CLIENT");
+        } else {
+            setCurrentRole(null);
+        }
+    }, [pathname]);
+
+    useEffect(() => {
+        if (!currentRole && !pathname.startsWith("/admin") && !pathname.startsWith("/client")) {
+            setToken(null);
+            setUser(null);
+            setIsLoading(false);
+            return;
+        }
+
+        const role = currentRole || (pathname.startsWith("/admin") ? "ADMIN" : "CLIENT");
+        const { tokenKey, userKey } = getStorageKeys(role);
         const savedToken = localStorage.getItem(tokenKey);
         const savedUser = localStorage.getItem(userKey);
 
@@ -52,21 +77,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 localStorage.removeItem(userKey);
             }
         } else {
-            // Clear state if no valid session for this role
             setToken(null);
             setUser(null);
         }
         setIsLoading(false);
-    }, [currentRole]);
+    }, [currentRole, pathname]);
 
     useEffect(() => {
         // Basic route protection
         if (!isLoading) {
             if (pathname.startsWith("/admin") && pathname !== "/admin/login" && (!token || user?.role !== "ADMIN")) {
-                router.push("/admin/login");
+                router.push("/");
             }
             if (pathname.startsWith("/client") && pathname !== "/client/login" && (!token || user?.role !== "CLIENT")) {
-                router.push("/client/login");
+                router.push("/");
             }
         }
     }, [pathname, token, isLoading, router, user]);
@@ -77,15 +101,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        // Handle cases where user data might be flat in the response or missing
-        const userData = newUser || { role: pathname.startsWith("/admin") ? "ADMIN" : "CLIENT" };
-        const role: "ADMIN" | "CLIENT" = userData.role || (pathname.startsWith("/admin") ? "ADMIN" : "CLIENT");
+        const role: "ADMIN" | "CLIENT" = newUser.role || (pathname.startsWith("/admin") ? "ADMIN" : "CLIENT");
         const { tokenKey, userKey } = getStorageKeys(role);
 
         localStorage.setItem(tokenKey, newToken);
-        localStorage.setItem(userKey, JSON.stringify(userData));
+        localStorage.setItem(userKey, JSON.stringify(newUser));
         setToken(newToken);
-        setUser(userData);
+        setUser(newUser);
+        setCurrentRole(role);
 
         if (role === "ADMIN") {
             router.push("/admin/dashboard");
@@ -95,18 +118,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     const logout = () => {
-        // Only clear the keys for the current role context
-        const { tokenKey, userKey } = getStorageKeys(currentRole);
+        const role = currentRole || (pathname.startsWith("/admin") ? "ADMIN" : "CLIENT");
+        const { tokenKey, userKey } = getStorageKeys(role);
         localStorage.removeItem(tokenKey);
         localStorage.removeItem(userKey);
         setToken(null);
         setUser(null);
+        setCurrentRole(null);
 
-        if (currentRole === "ADMIN") {
-            router.push("/admin/login");
-        } else {
-            router.push("/client/login");
-        }
+        router.push("/");
     };
 
     return (

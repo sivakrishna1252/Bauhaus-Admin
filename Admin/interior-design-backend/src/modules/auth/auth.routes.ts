@@ -1,7 +1,32 @@
 import { Router } from 'express';
-import { adminLogin, clientLogin, requestPasswordReset, resetPassword } from './auth.controller.js';
+import { adminLogin, clientLogin, requestPasswordReset, resetPassword, unifiedLogin } from './auth.controller.js';
 
 const router = Router();
+
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Unified Login (Admin or Client)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               identifier:
+ *                 type: string
+ *               secret:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid credentials
+ */
+router.post('/login', unifiedLogin);
 
 /**
  * @swagger

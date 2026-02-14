@@ -25,6 +25,39 @@ export const adminLogin = async (req: Request, res: Response) => {
     }
 };
 
+export const unifiedLogin = async (req: Request, res: Response) => {
+    const { identifier, secret } = req.body;
+
+    try {
+        // 1. Try Admin by email
+        const admin = await prisma.admin.findUnique({ where: { email: identifier } });
+        if (admin) {
+            const isMatch = await compareSecret(secret, admin.passwordHash);
+            if (isMatch) {
+                const token = generateToken({ id: admin.id, role: 'ADMIN', email: admin.email });
+                return res.json({ token, role: 'ADMIN' });
+            }
+        }
+
+        // 2. Try Client by username
+        const client = await prisma.client.findUnique({ where: { username: identifier } });
+        if (client) {
+            if (client.isBlocked) {
+                return res.status(403).json({ message: 'Account is blocked' });
+            }
+            const isMatch = await compareSecret(secret, client.pinHash);
+            if (isMatch) {
+                const token = generateToken({ id: client.id, role: 'CLIENT', username: client.username });
+                return res.json({ token, role: 'CLIENT' });
+            }
+        }
+
+        return res.status(401).json({ message: 'Invalid credentials' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+};
+
 export const clientLogin = async (req: Request, res: Response) => {
     const { username, pin } = req.body;
 

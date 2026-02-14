@@ -1,5 +1,22 @@
 import { API_BASE_URL } from '../config/api';
 
+export const unifiedLogin = async (identifier: string, secret: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ identifier, secret })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Login failed');
+    }
+
+    return await response.json();
+};
+
 export const adminLogin = async (email: string, password: string) => {
     const response = await fetch(`${API_BASE_URL}/auth/admin/login`, {
         method: 'POST',
