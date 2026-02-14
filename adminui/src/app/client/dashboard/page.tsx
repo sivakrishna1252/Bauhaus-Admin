@@ -224,14 +224,14 @@ export default function ClientDashboard() {
                             }}
                         />
                         <div className="h-8 w-px bg-white/10 hidden sm:block"></div>
-                        <h1 className="font-bold text-[#C5A059] uppercase tracking-widest text-[12px] hidden sm:block">Client Portal</h1>
+                        <h1 className="font-bold text-[#C5A059] uppercase tracking-widest text-[14px] hidden sm:block">Client Portal</h1>
                     </div>
                     <div className="flex items-center gap-6">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-[8px] font-black text-[#C5A059] uppercase tracking-widest">Verified Client</span>
+                            <span className="text-[14px] font-black text-[#C5A059] uppercase tracking-widest">Verified Client</span>
                             <span className="text-xs font-bold text-white uppercase tracking-wider">{user?.email?.split('@')[0]}</span>
                         </div>
-                        <button onClick={logout} className="h-9 px-4 rounded-full border border-[#C5A059]/40 flex items-center gap-2 text-[#C5A059] hover:bg-[#C5A059] hover:text-white transition-all text-[9px] font-bold uppercase tracking-widest">
+                        <button onClick={logout} className="h-9 px-4 rounded-full border border-[#C5A059]/40 flex items-center gap-2 text-[#C5A059] hover:bg-[#C5A059] hover:text-white transition-all text-[11px] font-bold uppercase tracking-widest">
                             Exit <LogOut size={14} />
                         </button>
                     </div>
