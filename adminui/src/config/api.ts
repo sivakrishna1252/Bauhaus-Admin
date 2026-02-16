@@ -1,6 +1,6 @@
 // src/config/api.ts
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://72.60.219.145:5004/api';
-export const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_BASE_URL || 'http://72.60.219.145:5004';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+export const MEDIA_BASE_URL = process.env.NEXT_PUBLIC_MEDIA_BASE_URL || '';
 
 // Helper to determine the correct token key based on the current path
 const getTokenFromStorage = (): string | null => {

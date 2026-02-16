@@ -1,4 +1,6 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://72.60.219.145:5004";
+import { API_BASE_URL } from "../config/api";
+
+const BASE_URL = API_BASE_URL;
 
 async function request<T>(
     endpoint: string,
