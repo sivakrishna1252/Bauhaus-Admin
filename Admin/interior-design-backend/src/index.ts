@@ -26,7 +26,7 @@ const adapter = new PrismaPg(pool);
 export const app = express();
 export const prisma = new PrismaClient({ adapter });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5004;
 
 app.use(cors());
 app.use(express.json());
@@ -82,5 +82,5 @@ app.use((err: any, req: Request, res: Response, next: any) => {
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
-    console.log(`Swagger docs available at http://localhost:${PORT}/api-docs`);
+    console.log(`Swagger docs available at http://72.60.219.145:${PORT}/api-docs`);
 });

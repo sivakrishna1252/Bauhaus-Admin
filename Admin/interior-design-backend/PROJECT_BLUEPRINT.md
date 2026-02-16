@@ -71,7 +71,7 @@ When the Admin adds an update (Photo/Video), the frontend MUST use `multipart/fo
 ### 🖼️ 3. Displaying Images & Videos
 The API returns a `fileUrl` like `uploads/projects/123.jpg`.
 - **Base URL**: You should append the backend URL to this path.
-- **Example**: If the backend is on `http://localhost:5000`, the image source is `http://localhost:5000/uploads/projects/123.jpg`.
+- **Example**: If the backend is on `http://72.60.219.145:5004`, the image source is `http://72.60.219.145:5004/uploads/projects/123.jpg`.
 
 ---
 
@@ -116,4 +116,4 @@ The API returns a `fileUrl` like `uploads/projects/123.jpg`.
 1. **Install Dependencies**: `npm install`
 2. **Setup Env**: Create `.env` with `DATABASE_URL` and `JWT_SECRET`.
 3. **Run Dev Server**: `npm run dev`
-4. **Interactive Docs**: Visit `http://localhost:5000/api-docs` for a live playground.
+4. **Interactive Docs**: Visit `http://72.60.219.145:5004/api-docs` for a live playground.

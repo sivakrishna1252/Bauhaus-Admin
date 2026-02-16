@@ -131,5 +131,5 @@ This guide is your complete map for the backend. It explains exactly how to talk
 
 ## ⚠️ Important Rules for Integration:
 1.  **Authorization Header:** Always send tokens like this: `Authorization: Bearer YOUR_TOKEN_HERE`.
-2.  **File Paths:** When the server returns a `fileUrl` (like `uploads/photo.jpg`), you should display it in the frontend as `http://localhost:5000/uploads/photo.jpg`.
+2.  **File Paths:** When the server returns a `fileUrl` (like `uploads/photo.jpg`), you should display it in the frontend as `http://72.60.219.145:5004/uploads/photo.jpg`.
 3.  **Video Player:** If `fileType` is `VIDEO`, use an `<video>` tag in HTML. If `IMAGE`, use `<img>`.

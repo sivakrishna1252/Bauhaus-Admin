@@ -111,7 +111,7 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
 
 
         // In production: Send email. For now: Log it to console.
-        console.log(`🔗 RESET LINK: http://localhost:5000/admin/reset-password.html?token=${token}`);
+        console.log(`🔗 RESET LINK: http://72.60.219.145:5004/admin/reset-password.html?token=${token}`);
 
         res.json({ message: 'Instructions sent to email (check server logs for link)' });
     } catch (error) {

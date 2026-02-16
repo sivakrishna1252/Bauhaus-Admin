@@ -20,7 +20,7 @@
 ## 🎯 Quick Start
 
 ### Prerequisites
-- Backend server running on `http://localhost:5000`
+- Backend server running on `http://72.60.219.145:5004`
 - Node.js environment for frontend
 - Basic understanding of REST APIs and JWT authentication
 
@@ -28,8 +28,8 @@
 Create a `.env` file in your frontend project:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5000/api
-VITE_MEDIA_BASE_URL=http://localhost:5000
+VITE_API_BASE_URL=http://72.60.219.145:5004/api
+VITE_MEDIA_BASE_URL=http://72.60.219.145:5004
 ```
 
 ---
@@ -40,8 +40,8 @@ VITE_MEDIA_BASE_URL=http://localhost:5000
 
 ```javascript
 // src/config/api.js
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://72.60.219.145:5004/api';
+const MEDIA_BASE_URL = import.meta.env.VITE_MEDIA_BASE_URL || 'http://72.60.219.145:5004';
 
 // Helper function to get auth headers
 export const getAuthHeaders = () => {
@@ -1319,7 +1319,7 @@ Interior Design API
 ### Environment Variables for Testing
 ```json
 {
-  "baseUrl": "http://localhost:5000/api",
+  "baseUrl": "http://72.60.219.145:5004/api",
   "adminToken": "",
   "clientToken": "",
   "testClientId": "",
@@ -1332,7 +1332,7 @@ Interior Design API
 ## 🎯 Quick Reference Checklist
 
 ### Before Integration:
-- [ ] Backend server is running on `http://localhost:5000`
+- [ ] Backend server is running on `http://72.60.219.145:5004`
 - [ ] Environment variables configured in frontend
 - [ ] API client setup with base URL and headers
 - [ ] Token storage mechanism implemented
@@ -1390,7 +1390,7 @@ Interior Design API
 
 ## 📚 Additional Resources
 
-- **Swagger Documentation:** `http://localhost:5000/api-docs` (if enabled)
+- **Swagger Documentation:** `http://72.60.219.145:5004/api-docs` (if enabled)
 - **Backend Repository:** Check README for setup instructions
 - **Postman Collection:** Import the API collection for testing
 

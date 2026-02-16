@@ -17,7 +17,7 @@ npm install
 ### 3. Environment Setup
 Create a `.env` file in the root directory:
 ```env
-PORT=5000
+PORT=5004
 DATABASE_URL="postgresql://user:password@localhost:5432/your_db"
 JWT_SECRET="your_very_secure_random_secret"
 ```
@@ -47,8 +47,8 @@ The system uses **JWT (JSON Web Tokens)** for secure access.
 - **Client**: Login with Username/4-digit PIN.
 
 ### 🍱 Accessing the Interfaces
-- **Visual Admin Panel**: [http://localhost:5000/admin](http://localhost:5000/admin)
-- **Interactive API Documentation (Swagger)**: [http://localhost:5000/api-docs](http://localhost:5000/api-docs)
+- **Visual Admin Panel**: [http://72.60.219.145:5004/admin](http://72.60.219.145:5004/admin)
+- **Interactive API Documentation (Swagger)**: [http://72.60.219.145:5004/api-docs](http://72.60.219.145:5004/api-docs)
 
 ### 📁 Technical Stack
 - **Runtime**: Node.js (ES Modules)
