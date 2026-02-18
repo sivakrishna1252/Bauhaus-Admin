@@ -16,6 +16,9 @@ const cormorant = Cormorant_Garamond({
 export const metadata: Metadata = {
   title: "Bauhaus Spaces | Client Portal",
   description: "Bespoke Interior Experiences",
+  icons: {
+    icon: "/bauhaus.ico",
+  },
 };
 
 import { AuthProvider } from "@/contexts/AuthContext";
