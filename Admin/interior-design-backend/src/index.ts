@@ -41,6 +41,10 @@ app.use('/uploads/timeline', express.static(path.join(__dirname, '../uploads/tim
 // Serve the Admin Panel (Frontend)
 app.use('/admin', express.static(path.join(__dirname, '../public')));
 
+app.get('/api', (req: Request, res: Response) => {
+    res.json({ message: 'Bauhaus API is active.' });
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
