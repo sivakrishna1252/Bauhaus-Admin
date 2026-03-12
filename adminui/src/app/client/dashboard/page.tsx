@@ -356,9 +356,6 @@ export default function ClientDashboard() {
                             <span className="text-[10px] md:text-[14px] font-black text-[#C5A059] uppercase tracking-widest">Verified Client</span>
                             <span className="text-[10px] font-bold text-white uppercase tracking-wider">{user?.email?.split('@')[0]}</span>
                         </div>
-                        <button onClick={() => setIsUploadModalOpen(true)} className="flex h-8 w-8 sm:h-9 sm:px-6 rounded-full bg-[#C5A059] text-white items-center justify-center sm:gap-2 text-[11px] font-bold uppercase tracking-widest shadow-lg shadow-[#C5A059]/30 hover:shadow-xl active:scale-95 transition-all">
-                            <Upload size={14} /> <span className="hidden sm:inline">Upload</span>
-                        </button>
                         <button onClick={logout} className="h-8 px-3 sm:h-9 sm:px-4 rounded-full border border-[#C5A059]/40 flex items-center gap-2 text-[#C5A059] hover:bg-[#C5A059] hover:text-white transition-all text-[10px] sm:text-[11px] font-bold uppercase tracking-widest">
                             <span className="hidden sm:inline">Exit</span> <LogOut size={14} />
                         </button>
