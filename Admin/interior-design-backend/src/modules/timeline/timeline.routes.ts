@@ -16,8 +16,10 @@ import { authenticate } from '../../middleware/auth.js';
 import multer from 'multer';
 import fs from 'fs';
 import path from 'path';
+import { enforceTotalUploadLimit } from '../../middleware/totalUploadLimit.js';
 
 const router = Router();
+const TOTAL_UPLOAD_MAX_BYTES = 20 * 1024 * 1024; // 20MB total per request
 
 // Storage configuration for timeline completion uploads
 const storage = multer.diskStorage({
@@ -33,7 +35,21 @@ const storage = multer.diskStorage({
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
 });
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    fileFilter: (req, file, cb) => {
+        // ALLOW IMAGES, VIDEOS and PDF
+        const filetypes = /jpeg|jpg|png|webp|mp4|webm|mov|pdf/;
+        const mimetype = filetypes.test(file.mimetype) || file.mimetype === 'application/pdf';
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Only images, videos and PDFs are allowed (jpg, png, mp4, pdf, etc.)'));
+    },
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max per file
+});
 
 /**
  * @swagger
@@ -49,7 +65,13 @@ router.post('/projects/:projectId/timeline', authenticate('ADMIN'), createTimeli
 router.patch('/timeline/:id', authenticate('ADMIN'), updateTimelineStep);
 
 // Admin: Complete step (Upload work for review)
-router.post('/timeline/:id/complete', authenticate('ADMIN'), upload.array('media', 50), completeTimelineStep);
+router.post(
+    '/timeline/:id/complete',
+    authenticate('ADMIN'),
+    upload.array('media', 50),
+    enforceTotalUploadLimit(TOTAL_UPLOAD_MAX_BYTES),
+    completeTimelineStep
+);
 
 // Admin: Add daily log
 router.post('/timeline/:id/logs', authenticate('ADMIN'), addDailyLog);
@@ -58,7 +80,13 @@ router.post('/timeline/:id/logs', authenticate('ADMIN'), addDailyLog);
 router.post('/projects/:id/generate-document', authenticate('ADMIN'), generateFinalDocument);
 
 // Client: Approve/Reject step
-router.post('/timeline/:id/feedback', authenticate('CLIENT'), upload.array('media', 50), feedbackTimelineStep);
+router.post(
+    '/timeline/:id/feedback',
+    authenticate('CLIENT'),
+    upload.array('media', 50),
+    enforceTotalUploadLimit(TOTAL_UPLOAD_MAX_BYTES),
+    feedbackTimelineStep
+);
 
 // General: Get timeline for a project
 router.get('/projects/:projectId/timeline', authenticate(), getProjectTimelineWithLogs);

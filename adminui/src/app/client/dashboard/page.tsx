@@ -42,6 +42,8 @@ const DOCUMENT_FOLDERS: { key: EntryCategory; label: string; icon: any; color: s
     { key: 'CLIENT_UPLOAD', label: 'Shared with Team', icon: Upload, color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-50/50 dark:bg-blue-900/10', borderColor: 'border-blue-100 dark:border-blue-900/20' },
 ];
 
+const MAX_TOTAL_UPLOAD_BYTES = 20 * 1024 * 1024; // 20 MB total per submit
+
 export default function ClientDashboard() {
     const { user, logout } = useAuth();
     const [project, setProject] = useState<Project | null>(null);
@@ -53,6 +55,7 @@ export default function ClientDashboard() {
     const [timeline, setTimeline] = useState<TimelineStep[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [feedbackFiles, setFeedbackFiles] = useState<File[]>([]);
+    const [feedbackUploadError, setFeedbackUploadError] = useState<string>("");
     const [feedbackModal, setFeedbackModal] = useState<{ isOpen: boolean, stepId: string | null, status: 'APPROVED' | 'REJECTED', feedback: string }>({ isOpen: false, stepId: null, status: 'APPROVED', feedback: '' });
 
     // Client Upload State
@@ -60,6 +63,7 @@ export default function ClientDashboard() {
     const [uploadDocs, setUploadDocs] = useState<File[]>([]);
     const [uploadDesc, setUploadDesc] = useState("");
     const [isUploading, setIsUploading] = useState(false);
+    const [clientUploadError, setClientUploadError] = useState<string>("");
 
     useEffect(() => {
         const fetchAllData = async () => {
@@ -85,8 +89,20 @@ export default function ClientDashboard() {
         setFeedbackModal({ isOpen: true, stepId, status, feedback: '' });
     };
 
+    const formatBytes = (bytes: number) => {
+        const mb = bytes / (1024 * 1024);
+        return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+    };
+
+    const getTotalBytes = (files: File[]) => files.reduce((acc, f) => acc + (f?.size || 0), 0);
+
     const handleFeedbackSubmit = async () => {
         if (!feedbackModal.stepId) return;
+        const total = getTotalBytes(feedbackFiles);
+        if (total > MAX_TOTAL_UPLOAD_BYTES) {
+            setFeedbackUploadError(`Upload limit exceeded. Your total files are ${formatBytes(total)}. Max allowed is 20 MB. Please compress your images/videos/documents and try again (large uploads can impact server stability).`);
+            return;
+        }
         setIsSubmitting(true);
         try {
             const formData = new FormData();
@@ -104,6 +120,7 @@ export default function ClientDashboard() {
             }
             setFeedbackModal({ isOpen: false, stepId: null, status: 'APPROVED', feedback: '' });
             setFeedbackFiles([]);
+            setFeedbackUploadError("");
         } catch (err: any) {
             alert(err.message);
         } finally {
@@ -113,6 +130,11 @@ export default function ClientDashboard() {
 
     const handleClientUpload = async () => {
         if (!project || (uploadDocs.length === 0 && !uploadDesc)) return;
+        const total = getTotalBytes(uploadDocs);
+        if (total > MAX_TOTAL_UPLOAD_BYTES) {
+            setClientUploadError(`Upload limit exceeded. Your total files are ${formatBytes(total)}. Max allowed is 20 MB. Please compress your images/videos/documents and try again (large uploads can impact server stability).`);
+            return;
+        }
         setIsUploading(true);
         try {
             const formData = new FormData();
@@ -130,6 +152,7 @@ export default function ClientDashboard() {
             setIsUploadModalOpen(false);
             setUploadDocs([]);
             setUploadDesc("");
+            setClientUploadError("");
         } catch (err: any) {
             alert(err.message);
         } finally {
@@ -983,13 +1006,30 @@ export default function ClientDashboard() {
             {/* Feedback Modal */}
             {feedbackModal.isOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 transition-all duration-300">
-                    <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200">
+                    <div className="relative bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95 duration-200">
+                        {isSubmitting && (
+                            <div className="absolute inset-0 z-10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center">
+                                <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl">
+                                    <Loader2 className="h-5 w-5 animate-spin text-[#C5A059]" />
+                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-200">Uploading & sending email…</p>
+                                </div>
+                            </div>
+                        )}
                         <div className="p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className={`text-2xl font-black uppercase tracking-widest ${feedbackModal.status === 'APPROVED' ? 'text-emerald-500' : 'text-rose-500'}`}>
                                     {feedbackModal.status === 'APPROVED' ? 'Approve Milestone' : 'Request Revision'}
                                 </h3>
-                                <button onClick={() => setFeedbackModal({ isOpen: false, stepId: null, status: 'APPROVED', feedback: '' })} className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
+                                <button
+                                    disabled={isSubmitting}
+                                    onClick={() => {
+                                        if (isSubmitting) return;
+                                        setFeedbackModal({ isOpen: false, stepId: null, status: 'APPROVED', feedback: '' });
+                                        setFeedbackFiles([]);
+                                        setFeedbackUploadError("");
+                                    }}
+                                    className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
                                     <X size={16} />
                                 </button>
                             </div>
@@ -1017,13 +1057,30 @@ export default function ClientDashboard() {
                                         className="absolute inset-0 opacity-0 cursor-pointer"
                                         onChange={(e) => {
                                             if (e.target.files) {
-                                                setFeedbackFiles([...feedbackFiles, ...Array.from(e.target.files)]);
+                                                const incoming = Array.from(e.target.files);
+                                                const next = [...feedbackFiles, ...incoming];
+                                                const total = getTotalBytes(next);
+                                                if (total > MAX_TOTAL_UPLOAD_BYTES) {
+                                                    setFeedbackUploadError(`Upload limit exceeded. Your total files would be ${formatBytes(total)}. Max allowed is 20 MB. Please compress your images/videos/documents and try again (large uploads can impact server stability).`);
+                                                } else {
+                                                    setFeedbackUploadError("");
+                                                    setFeedbackFiles(next);
+                                                }
+                                                e.target.value = "";
                                             }
                                         }}
                                     />
                                     <Upload size={24} className="mx-auto text-zinc-300 mb-2" />
                                     <p className="text-[10px] font-bold text-zinc-400 uppercase">Click to add files</p>
                                 </div>
+                                <p className="mt-2 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                                    Max 20 MB total • Selected {formatBytes(getTotalBytes(feedbackFiles))}
+                                </p>
+                                {feedbackUploadError && (
+                                    <div className="mt-3 p-3 rounded-2xl bg-rose-50 border border-rose-100">
+                                        <p className="text-[11px] font-bold text-rose-700 leading-relaxed">{feedbackUploadError}</p>
+                                    </div>
+                                )}
                                 {feedbackFiles.length > 0 && (
                                     <div className="flex flex-wrap gap-2 mt-4">
                                         {feedbackFiles.map((f, i) => (
@@ -1037,12 +1094,22 @@ export default function ClientDashboard() {
                             </div>
 
                             <div className="flex gap-4">
-                                <Button onClick={() => setFeedbackModal({ isOpen: false, stepId: null, status: 'APPROVED', feedback: '' })} variant="outline" className="flex-1 h-12 rounded-xl text-xs font-bold uppercase tracking-widest">
+                                <Button
+                                    disabled={isSubmitting}
+                                    onClick={() => {
+                                        if (isSubmitting) return;
+                                        setFeedbackModal({ isOpen: false, stepId: null, status: 'APPROVED', feedback: '' });
+                                        setFeedbackFiles([]);
+                                        setFeedbackUploadError("");
+                                    }}
+                                    variant="outline"
+                                    className="flex-1 h-12 rounded-xl text-xs font-bold uppercase tracking-widest"
+                                >
                                     Cancel
                                 </Button>
                                 <Button
                                     onClick={handleFeedbackSubmit}
-                                    disabled={isSubmitting || (feedbackModal.status === 'REJECTED' && !feedbackModal.feedback.trim())}
+                                    disabled={isSubmitting || !!feedbackUploadError || (feedbackModal.status === 'REJECTED' && !feedbackModal.feedback.trim())}
                                     className={`flex-1 h-12 rounded-xl text-xs font-bold uppercase tracking-widest text-white shadow-lg ${feedbackModal.status === 'APPROVED' ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/30' : 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/30'}`}
                                 >
                                     {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mx-auto" /> : 'Confirm'}
@@ -1056,11 +1123,29 @@ export default function ClientDashboard() {
             {/* Client Upload Modal */}
             {isUploadModalOpen && (
                 <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95">
+                    <div className="relative bg-white dark:bg-zinc-900 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-zinc-200 dark:border-zinc-800 animate-in zoom-in-95">
+                        {isUploading && (
+                            <div className="absolute inset-0 z-10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-sm flex items-center justify-center">
+                                <div className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl">
+                                    <Loader2 className="h-5 w-5 animate-spin text-[#C5A059]" />
+                                    <p className="text-xs font-bold uppercase tracking-widest text-zinc-700 dark:text-zinc-200">Uploading & notifying team…</p>
+                                </div>
+                            </div>
+                        )}
                         <div className="p-8">
                             <div className="flex items-center justify-between mb-8">
                                 <h3 className="text-2xl font-black uppercase tracking-widest text-[#C5A059]">Upload Documents</h3>
-                                <button onClick={() => setIsUploadModalOpen(false)} className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors">
+                                <button
+                                    disabled={isUploading}
+                                    onClick={() => {
+                                        if (isUploading) return;
+                                        setIsUploadModalOpen(false);
+                                        setUploadDocs([]);
+                                        setUploadDesc("");
+                                        setClientUploadError("");
+                                    }}
+                                    className="h-8 w-8 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500 hover:bg-zinc-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
                                     <X size={16} />
                                 </button>
                             </div>
@@ -1075,13 +1160,30 @@ export default function ClientDashboard() {
                                         className="absolute inset-0 opacity-0 cursor-pointer"
                                         onChange={(e) => {
                                             if (e.target.files) {
-                                                setUploadDocs([...uploadDocs, ...Array.from(e.target.files)]);
+                                                const incoming = Array.from(e.target.files);
+                                                const next = [...uploadDocs, ...incoming];
+                                                const total = getTotalBytes(next);
+                                                if (total > MAX_TOTAL_UPLOAD_BYTES) {
+                                                    setClientUploadError(`Upload limit exceeded. Your total files would be ${formatBytes(total)}. Max allowed is 20 MB. Please compress your images/videos/documents and try again (large uploads can impact server stability).`);
+                                                } else {
+                                                    setClientUploadError("");
+                                                    setUploadDocs(next);
+                                                }
+                                                e.target.value = "";
                                             }
                                         }}
                                     />
                                     <Upload size={32} className="mx-auto text-[#C5A059] mb-4 opacity-40" />
                                     <p className="text-[12px] font-black text-zinc-400 uppercase tracking-widest">Drop Files or Click to Browse</p>
                                 </div>
+                                <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                                    Max 20 MB total • Selected {formatBytes(getTotalBytes(uploadDocs))}
+                                </p>
+                                {clientUploadError && (
+                                    <div className="p-3 rounded-2xl bg-rose-50 border border-rose-100">
+                                        <p className="text-[11px] font-bold text-rose-700 leading-relaxed">{clientUploadError}</p>
+                                    </div>
+                                )}
 
                                 {uploadDocs.length > 0 && (
                                     <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto pr-2">
@@ -1106,12 +1208,23 @@ export default function ClientDashboard() {
                                 </div>
 
                                 <div className="flex gap-4 pt-4">
-                                    <Button onClick={() => setIsUploadModalOpen(false)} variant="outline" className="flex-1 h-12 rounded-xl text-xs font-bold uppercase tracking-widest">
+                                    <Button
+                                        disabled={isUploading}
+                                        onClick={() => {
+                                            if (isUploading) return;
+                                            setIsUploadModalOpen(false);
+                                            setUploadDocs([]);
+                                            setUploadDesc("");
+                                            setClientUploadError("");
+                                        }}
+                                        variant="outline"
+                                        className="flex-1 h-12 rounded-xl text-xs font-bold uppercase tracking-widest"
+                                    >
                                         Cancel
                                     </Button>
                                     <Button
                                         onClick={handleClientUpload}
-                                        disabled={isUploading || (uploadDocs.length === 0 && !uploadDesc.trim())}
+                                        disabled={isUploading || !!clientUploadError || (uploadDocs.length === 0 && !uploadDesc.trim())}
                                         className="flex-1 h-12 rounded-xl text-xs font-bold uppercase tracking-widest bg-[#C5A059] text-white shadow-lg shadow-[#C5A059]/20 hover:bg-[#A38548]"
                                     >
                                         {isUploading ? <Loader2 className="animate-spin w-4 h-4 mx-auto" /> : 'Start Upload'}

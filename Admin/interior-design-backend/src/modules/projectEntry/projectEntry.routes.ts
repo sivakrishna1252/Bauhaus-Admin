@@ -2,8 +2,10 @@ import { Router } from 'express';
 import { createProjectEntry, getProjectEntries, updateProjectEntry, deleteProjectEntry } from './projectEntry.controller.js';
 import { authenticate } from '../../middleware/auth.js';
 import upload from '../../middleware/upload.js';
+import { enforceTotalUploadLimit } from '../../middleware/totalUploadLimit.js';
 
 const router = Router();
+const TOTAL_UPLOAD_MAX_BYTES = 20 * 1024 * 1024; // 20MB total per request
 
 /**
  * @swagger
@@ -47,7 +49,13 @@ const router = Router();
  *       201:
  *         description: Entry created
  */
-router.post('/projects/:id/entries', authenticate(), upload.array('media', 50), createProjectEntry);
+router.post(
+    '/projects/:id/entries',
+    authenticate(),
+    upload.array('media', 50),
+    enforceTotalUploadLimit(TOTAL_UPLOAD_MAX_BYTES),
+    createProjectEntry
+);
 
 /**
  * @swagger
@@ -102,7 +110,13 @@ router.get('/projects/:id/entries', authenticate(), getProjectEntries);
  *       200:
  *         description: Entry updated
  */
-router.patch('/projects/entries/:id', authenticate('ADMIN'), upload.array('media', 50), updateProjectEntry);
+router.patch(
+    '/projects/entries/:id',
+    authenticate('ADMIN'),
+    upload.array('media', 50),
+    enforceTotalUploadLimit(TOTAL_UPLOAD_MAX_BYTES),
+    updateProjectEntry
+);
 
 /**
  * @swagger

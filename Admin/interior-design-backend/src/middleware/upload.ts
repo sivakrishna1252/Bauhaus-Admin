@@ -32,7 +32,7 @@ const upload = multer({
         }
         cb(new Error('Only images, videos and PDFs are allowed (jpg, png, mp4, pdf, etc.)'));
     },
-    limits: { fileSize: 50 * 1024 * 1024 }, // Increased to 50MB for videos
+    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB max per file (server-side safety)
 });
 
 export default upload;
