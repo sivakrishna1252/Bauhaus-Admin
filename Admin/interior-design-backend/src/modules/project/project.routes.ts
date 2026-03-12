@@ -5,7 +5,9 @@ import {
     updateProjectStatus,
     deleteProject,
     getMyProjects,
-    getProjectDetail
+    getProjectDetail,
+    summarizeAndEmailProject,
+    archiveAndDownloadProject
 } from './project.controller.js';
 import { authenticate } from '../../middleware/auth.js';
 
@@ -108,6 +110,28 @@ router.patch('/projects/:id/status', authenticate('ADMIN'), updateProjectStatus)
  *         description: Project deleted
  */
 router.delete('/projects/:id', authenticate('ADMIN'), deleteProject);
+
+/**
+ * @swagger
+ * /api/projects/{id}/summarize:
+ *   post:
+ *     summary: Send project summary email to client (Admin only)
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/projects/:id/summarize', authenticate('ADMIN'), summarizeAndEmailProject);
+
+/**
+ * @swagger
+ * /api/projects/{id}/archive:
+ *   get:
+ *     summary: Download project ZIP archive (Admin only)
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get('/projects/:id/archive', authenticate('ADMIN'), archiveAndDownloadProject);
 
 /**
  * @swagger

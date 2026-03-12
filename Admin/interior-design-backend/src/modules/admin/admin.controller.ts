@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { prisma } from '../../index.js';
 import { hashSecret } from '../../utils/hash.js';
 import bcrypt from 'bcrypt';
-
+import { sendClientWelcomeCredentials, sendClientPinUpdated } from '../../utils/notifications.js';
 
 export const getAllClients = async (req: Request, res: Response) => {
     try {
@@ -11,42 +11,76 @@ export const getAllClients = async (req: Request, res: Response) => {
         });
         res.json(clients);
     } catch (error) {
+        console.error('Get All Clients Error:', error);
         res.status(500).json({ message: 'Internal server error', error });
     }
 };
 
 export const createClient = async (req: Request, res: Response) => {
-    const { username, pin } = req.body;
+    const { username, pin, email } = req.body;
+    console.log('--- CREATE CLIENT ATTEMPT ---');
+    console.log('Username:', username);
+    console.log('Email:', email);
+    console.log('PIN:', pin ? '****' : 'MISSING');
 
     try {
+        console.log('Checking for existing client...');
         const existingClient = await prisma.client.findUnique({ where: { username } });
         if (existingClient) {
+            console.log('Client already exists with username:', username);
             return res.status(400).json({ message: 'Name already taken' });
         }
 
-        // Check if PIN is already taken by any other client
+        if (email) {
+            console.log('Checking for existing email...');
+            const existingEmail = await prisma.client.findFirst({ where: { email } });
+            if (existingEmail) {
+                console.log('Email already exists:', email);
+                return res.status(400).json({ message: 'Email already registered' });
+            }
+        }
+
+        console.log('Checking for PIN uniqueness...');
         const allClients = await prisma.client.findMany({
             select: { pinHash: true }
         });
 
-        for (const client of allClients) {
-            const isMatch = await bcrypt.compare(pin, client.pinHash);
+        for (const c of allClients) {
+            const isMatch = await bcrypt.compare(pin, c.pinHash);
             if (isMatch) {
-                return res.status(400).json({ message: 'PIN already taken' });
+                console.log('PIN already taken');
+                return res.status(400).json({ message: 'PIN already taken by another client' });
             }
         }
 
+        console.log('Hashing PIN...');
         const pinHash = await hashSecret(pin);
-        const client = await prisma.client.create({
+
+        console.log('Creating client in database...');
+        const client = await (prisma as any).client.create({
             data: {
                 username,
                 pinHash,
+                email,
+                welcomePin: pin // Store raw PIN until setup is finalized
             },
         });
 
-        res.status(201).json({ id: client.id, username: client.username });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error', error });
+        console.log('Client created successfully:', client.id);
+
+        // Send welcome credentials email to the new client
+        if (email) {
+            await sendClientWelcomeCredentials(email, username, pin);
+        }
+
+        res.status(201).json({ id: client.id, username: client.username, email: client.email });
+    } catch (error: any) {
+        console.error('CRITICAL ERROR in createClient:', error);
+        res.status(500).json({
+            message: 'Internal server error',
+            error: error.message,
+            stack: error.stack
+        });
     }
 };
 
@@ -69,10 +103,18 @@ export const resetClientPin = async (req: Request, res: Response) => {
         }
 
         const pinHash = await hashSecret(newPin);
-        await prisma.client.update({
+        const updatedClient = await prisma.client.update({
             where: { id },
-            data: { pinHash },
+            data: {
+                pinHash,
+                welcomePin: newPin
+            },
         });
+
+        // Send PIN update notification to the client if they have an email
+        if ((updatedClient as any).email) {
+            await sendClientPinUpdated((updatedClient as any).email, updatedClient.username, newPin);
+        }
 
         res.json({ message: 'Client PIN updated successfully' });
     } catch (error) {
@@ -109,6 +151,7 @@ export const unblockClient = async (req: Request, res: Response) => {
         res.status(500).json({ message: 'Internal server error', error });
     }
 };
+
 // NEW: Delete client and all associated data
 export const deleteClient = async (req: Request, res: Response) => {
     const id = req.params.id as string;
@@ -153,7 +196,6 @@ export const deleteClient = async (req: Request, res: Response) => {
     }
 };
 
-
 // NEW: Admin update their own profile (Email or Password)
 export const updateAdminProfile = async (req: any, res: Response) => {
     const adminId = req.user.id; // From JWT token
@@ -176,4 +218,3 @@ export const updateAdminProfile = async (req: any, res: Response) => {
         res.status(500).json({ message: 'Error updating profile', error });
     }
 };
-

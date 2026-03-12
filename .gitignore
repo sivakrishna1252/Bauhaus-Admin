@@ -12,3 +12,7 @@ __pycache__/
 venv/
 
 *.log
+Admin/interior-design-backend/uploads/
+Admin/interior-design-backend/token.json
+adminui/tsconfig.tsbuildinfo
+Admin/interior-design-backend/logs/

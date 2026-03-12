@@ -47,7 +47,7 @@ const router = Router();
  *       201:
  *         description: Entry created
  */
-router.post('/projects/:id/entries', authenticate('ADMIN'), upload.array('media', 20), createProjectEntry);
+router.post('/projects/:id/entries', authenticate(), upload.array('media', 50), createProjectEntry);
 
 /**
  * @swagger
@@ -102,7 +102,7 @@ router.get('/projects/:id/entries', authenticate(), getProjectEntries);
  *       200:
  *         description: Entry updated
  */
-router.patch('/projects/entries/:id', authenticate('ADMIN'), upload.array('media', 20), updateProjectEntry);
+router.patch('/projects/entries/:id', authenticate('ADMIN'), upload.array('media', 50), updateProjectEntry);
 
 /**
  * @swagger

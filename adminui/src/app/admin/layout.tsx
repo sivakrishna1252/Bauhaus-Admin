@@ -51,10 +51,18 @@ export default function AdminLayout({
 
     return (
         <div className="flex min-h-screen bg-cs-bg dark:bg-zinc-950">
+            {/* Sidebar Overlay (Mobile) */}
+            {isSidebarOpen && (
+                <div
+                    className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden transition-opacity"
+                    onClick={() => setIsSidebarOpen(false)}
+                />
+            )}
+
             {/* Sidebar */}
             <aside
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-cs-border bg-white transition-transform duration-300 dark:border-zinc-800 dark:bg-zinc-900",
+                    "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-cs-border bg-white transition-all duration-300 dark:border-zinc-800 dark:bg-zinc-900",
                     !isSidebarOpen && "-translate-x-full lg:translate-x-0 lg:w-20"
                 )}
             >
@@ -69,7 +77,7 @@ export default function AdminLayout({
                         />
                     </div>
                     <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                        onClick={() => setIsSidebarOpen(false)}
                         className="lg:hidden text-cs-text hover:text-cs-primary-100"
                     >
                         <X size={24} />
@@ -83,16 +91,19 @@ export default function AdminLayout({
                             <Link
                                 key={item.name}
                                 href={item.href}
+                                onClick={() => {
+                                    if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                                }}
                                 className={cn(
-                                    "group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all",
+                                    "group flex items-center justify-between rounded-xl px-4 py-3 text-sm font-medium transition-all font-jakarta",
                                     isActive
                                         ? "bg-[#C5A059]/10 text-cs-primary-200 dark:bg-[#C5A059]/20 dark:text-cs-primary-100"
-                                        : "text-cs-text hover:bg-cs-bg dark:hover:bg-zinc-800 dark:text-zinc-400"
+                                        : "text-cs-text hover:bg-cs-bg dark:hover:bg-zinc-800 dark:text-zinc-300"
                                 )}
                             >
                                 <div className="flex items-center gap-3">
                                     <item.icon className={cn("h-5 w-5", isActive ? "text-cs-primary-100 dark:text-cs-primary-100" : "text-cs-text")} />
-                                    <span className={cn(isActive && "font-bold", !isSidebarOpen && "lg:hidden")}>{item.name}</span>
+                                    <span className={cn("uppercase tracking-widest text-[11px]", isActive && "font-black", !isSidebarOpen && "lg:hidden")}>{item.name}</span>
                                 </div>
                                 {isActive && isSidebarOpen && <ChevronRight className="h-4 w-4" />}
                             </Link>
@@ -103,41 +114,51 @@ export default function AdminLayout({
                 <div className="border-t border-cs-border p-4 dark:border-zinc-800">
                     <button
                         onClick={logout}
-                        className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-destructive hover:bg-destructive/10 transition-all font-bold cursor-pointer"
+                        className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-[11px] font-black uppercase tracking-widest text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
                     >
                         <LogOut className="h-5 w-5" />
-                        <span className={cn(!isSidebarOpen && "lg:hidden")}>Logout</span>
+                        <span className={cn(!isSidebarOpen && "lg:hidden")}>Logout Account</span>
                     </button>
                 </div>
             </aside>
 
             {/* Main Content */}
             <main className={cn(
-                "flex-1 transition-all duration-300",
+                "flex-1 transition-all duration-300 min-w-0 font-jakarta",
                 isSidebarOpen ? "lg:ml-72" : "lg:ml-20"
             )}>
                 {/* Header */}
-                <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-cs-border bg-white/80 px-8 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-900/80">
+                <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-cs-border bg-white/80 px-4 md:px-8 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">
                     <button
-                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                        className="text-cs-text hover:text-cs-primary-100"
+                        onClick={() => setIsSidebarOpen(true)}
+                        className={cn(
+                            "p-2 text-cs-text hover:text-cs-primary-100 lg:hidden",
+                            isSidebarOpen && "hidden"
+                        )}
                     >
                         <Menu size={24} />
                     </button>
 
-                    <div className="flex items-center gap-4">
+                    <button
+                         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                         className="hidden lg:flex p-2 text-cs-text hover:text-cs-primary-100"
+                    >
+                        <Menu size={24} />
+                    </button>
+
+                    <div className="flex items-center gap-3 md:gap-4 ml-auto">
                         <div className="flex flex-col items-end">
-                            <span className="text-sm font-bold text-cs-heading dark:text-white uppercase">Admin</span>
-                            <span className="text-xs text-cs-text dark:text-zinc-400">{user?.email || "Interior Designer"}</span>
+                            <span className="text-[10px] font-black text-[#C5A059] uppercase tracking-[0.2em]">Master Admin</span>
+                            <span className="text-[11px] font-bold text-zinc-900 dark:text-zinc-100 uppercase hidden sm:inline-block">{user?.email?.split('@')[0] || "Interior Designer"}</span>
                         </div>
-                        <div className="h-10 w-10 rounded-full bg-[#C5A059]/20 border border-[#C5A059]/40 flex items-center justify-center font-bold text-cs-primary-200">
+                        <div className="h-10 w-10 rounded-xl bg-[#C5A059] shadow-lg shadow-[#C5A059]/20 flex items-center justify-center font-black text-white text-lg">
                             {user?.email?.[0].toUpperCase() || "A"}
                         </div>
                     </div>
                 </header>
 
                 {/* Page Content */}
-                <div className="p-8">
+                <div className="p-4 md:p-8">
                     {children}
                 </div>
             </main>

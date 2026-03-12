@@ -92,13 +92,18 @@ The API returns a `fileUrl` like `uploads/projects/123.jpg`.
 | `/api/admin/clients/:id/reset-pin` | `PATCH` | Change client's 4-digit PIN |
 | `/api/admin/clients/:id/block` | `PATCH` | Disable client access |
 
-### Project Management
+### Project & Timeline Management
 | Endpoint | Method | Role | Description |
 | :--- | :--- | :--- | :--- |
 | `/api/projects` | `POST` | Admin | Create project for a client |
 | `/api/projects/:id` | `GET` | Admin | Get project details |
 | `/api/projects/:id/entries`| `POST` | Admin | **Upload photo/video update** |
 | `/api/my-projects` | `GET` | Client | **Client view: See all my projects** |
+| `/api/projects/:projectId/timeline` | `POST` | Admin | **Create timeline milestone** |
+| `/api/timeline/:id` | `PATCH` | Admin | **Update deadline (Requires reason)** |
+| `/api/timeline/:id/complete`| `POST` | Admin | **Upload work & notify client for review** |
+| `/api/timeline/:id/feedback`| `POST` | Client | **Approve or Reject work** |
+| `/api/projects/:projectId/timeline` | `GET` | Both | **View project timeline** |
 
 ---
 

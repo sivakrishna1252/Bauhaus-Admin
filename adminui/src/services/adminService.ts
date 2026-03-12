@@ -30,11 +30,11 @@ export const getAllClients = async () => {
     return await response.json();
 };
 
-export const createClient = async (username: string, pin: string) => {
+export const createClient = async (username: string, pin: string, email?: string) => {
     const response = await fetch(`${API_BASE_URL}/admin/clients`, {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: JSON.stringify({ username, pin })
+        body: JSON.stringify({ username, pin, email })
     });
 
     if (!response.ok) {

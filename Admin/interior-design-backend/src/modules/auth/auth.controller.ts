@@ -3,6 +3,7 @@ import { prisma } from '../../index.js';
 import { compareSecret, hashSecret } from '../../utils/hash.js';
 import { generateToken } from '../../utils/token.js';
 import crypto from 'crypto';
+import { sendPasswordResetNotification } from '../../utils/notifications.js';
 
 export const adminLogin = async (req: Request, res: Response) => {
     const { email, password } = req.body;
@@ -20,8 +21,9 @@ export const adminLogin = async (req: Request, res: Response) => {
 
         const token = generateToken({ id: admin.id, role: 'ADMIN', email: admin.email });
         res.json({ token, role: 'ADMIN' });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error', error });
+    } catch (error: any) {
+        console.error("ADMIN LOGIN ERROR:", error);
+        res.status(500).json({ message: 'Internal server error', error: { name: error.name, message: error.message, stack: error.stack } });
     }
 };
 
@@ -53,8 +55,9 @@ export const unifiedLogin = async (req: Request, res: Response) => {
         }
 
         return res.status(401).json({ message: 'Invalid credentials' });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error', error });
+    } catch (error: any) {
+        console.error("ADMIN LOGIN ERROR:", error);
+        res.status(500).json({ message: 'Internal server error', error: { name: error.name, message: error.message, stack: error.stack } });
     }
 };
 
@@ -78,8 +81,9 @@ export const clientLogin = async (req: Request, res: Response) => {
 
         const token = generateToken({ id: client.id, role: 'CLIENT', username: client.username });
         res.json({ token, role: 'CLIENT' });
-    } catch (error) {
-        res.status(500).json({ message: 'Internal server error', error });
+    } catch (error: any) {
+        console.error("ADMIN LOGIN ERROR:", error);
+        res.status(500).json({ message: 'Internal server error', error: { name: error.name, message: error.message, stack: error.stack } });
     }
 };
 
@@ -110,10 +114,10 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
         });
 
 
-        // In production: Send email. For now: Log it to console.
-        console.log(`🔗 RESET LINK: http://72.60.219.145:5004/admin/reset-password.html?token=${token}`);
+        const resetLink = `http://localhost:3000/admin/reset-password.html?token=${token}`;
+        await sendPasswordResetNotification(email, resetLink);
 
-        res.json({ message: 'Instructions sent to email (check server logs for link)' });
+        res.json({ message: 'Instructions sent to your email.' });
     } catch (error) {
         res.status(500).json({ message: 'Internal server error' });
     }

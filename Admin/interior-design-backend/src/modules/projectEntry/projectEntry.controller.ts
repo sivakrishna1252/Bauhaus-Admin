@@ -2,8 +2,9 @@ import { Response } from 'express';
 import { prisma } from '../../index.js';
 import { AuthRequest } from '../../middleware/auth.js';
 import { EntryCategory } from '@prisma/client';
+import { organizeFileToProject, getFileTypeFromMimetype } from '../../utils/fileUtils.js';
 
-const VALID_CATEGORIES: string[] = ['TIMELINE', 'AGREEMENT', 'PAYMENT_INVOICE', 'HANDOVER', 'CERTIFICATE'];
+const VALID_CATEGORIES: string[] = ['TIMELINE', 'AGREEMENT', 'PAYMENT_INVOICE', 'HANDOVER', 'CERTIFICATE', 'PROJECT_DOCUMENT', 'CLIENT_UPLOAD'];
 
 
 // Helper to format entry for frontend (Mapping DB fields to the 'media' array expected by UI)
@@ -22,8 +23,16 @@ export const createProjectEntry = async (req: AuthRequest, res: Response) => {
     const projectId = req.params.id as string;
     const { description, category } = req.body;
 
-    // Validate category if provided
-    const entryCategory = category && VALID_CATEGORIES.includes(category) ? category as EntryCategory : 'TIMELINE';
+    // Validate category if provided. Admins can pick any, Clients default to CLIENT_UPLOAD or are restricted
+    let entryCategory: EntryCategory = 'TIMELINE';
+    if (category && VALID_CATEGORIES.includes(category)) {
+        entryCategory = category as EntryCategory;
+    }
+
+    // Force CLIENT_UPLOAD category for client role
+    if (req.user?.role === 'CLIENT') {
+        entryCategory = 'CLIENT_UPLOAD' as EntryCategory;
+    }
 
     // Use req.files for multiple uploads from upload.array()
     const files = req.files as Express.Multer.File[] | undefined;
@@ -39,18 +48,14 @@ export const createProjectEntry = async (req: AuthRequest, res: Response) => {
         }
 
         const entriesData = files.map(file => {
-            let fileType: 'IMAGE' | 'VIDEO' | 'PDF' = 'IMAGE';
-            if (file.mimetype.startsWith('video/')) {
-                fileType = 'VIDEO';
-            } else if (file.mimetype === 'application/pdf') {
-                fileType = 'PDF';
-            }
+            const subFolder = entryCategory.toLowerCase();
+            const persistentPath = organizeFileToProject(projectId, file.path, subFolder);
 
             return {
                 projectId,
                 description: description || '',
-                fileUrl: file.path.replace(/\\/g, '/'),
-                fileType: fileType,
+                fileUrl: persistentPath,
+                fileType: getFileTypeFromMimetype(file.mimetype),
                 category: entryCategory,
             };
         });
@@ -118,15 +123,11 @@ export const updateProjectEntry = async (req: AuthRequest, res: Response) => {
         if (category && VALID_CATEGORIES.includes(category)) data.category = category as EntryCategory;
 
         if (file) {
-            let fileType: 'IMAGE' | 'VIDEO' | 'PDF' = 'IMAGE';
-            if (file.mimetype.startsWith('video/')) {
-                fileType = 'VIDEO';
-            } else if (file.mimetype === 'application/pdf') {
-                fileType = 'PDF';
-            }
+            const subFolder = (data.category || existingEntry.category).toLowerCase();
+            const persistentPath = organizeFileToProject(existingEntry.projectId, file.path, subFolder);
 
-            data.fileUrl = file.path.replace(/\\/g, '/');
-            data.fileType = fileType;
+            data.fileUrl = persistentPath;
+            data.fileType = getFileTypeFromMimetype(file.mimetype);
         }
 
         const updatedEntry = await prisma.projectEntry.update({

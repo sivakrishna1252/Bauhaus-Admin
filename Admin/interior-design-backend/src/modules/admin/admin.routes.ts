@@ -112,26 +112,26 @@ router.patch('/clients/:id/block', blockClient);
  *         description: Client unblocked
  */
 router.patch('/clients/:id/unblock', unblockClient);
-+
-    +/**
-+ * @swagger
-+ * /api/admin/clients/{id}:
-+ *   delete:
-+ *     summary: Delete a client and all their projects
-+ *     tags: [Admin]
-+ *     security:
-+ *       - bearerAuth: []
-+ *     parameters:
-+ *       - in: path
-+ *         name: id
-+ *         required: true
-+ *         schema:
-+ *           type: string
-+ *     responses:
-+ *       200:
-+ *         description: Client deleted
-+ */
-    +router.delete('/clients/:id', deleteClient);
+
+/**
+ * @swagger
+ * /api/admin/clients/{id}:
+ *   delete:
+ *     summary: Delete a client and all their projects
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Client deleted
+ */
+router.delete('/clients/:id', deleteClient);
 
 
 

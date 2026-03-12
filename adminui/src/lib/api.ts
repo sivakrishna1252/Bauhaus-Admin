@@ -6,7 +6,9 @@ async function request<T>(
     endpoint: string,
     options: RequestInit = {}
 ): Promise<T> {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const token = typeof window !== "undefined"
+        ? (localStorage.getItem("admin_token") || localStorage.getItem("client_token") || localStorage.getItem("token"))
+        : null;
 
     const headers = new Headers(options.headers);
     if (token) {

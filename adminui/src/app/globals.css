@@ -162,3 +162,10 @@
 .p1 {
   @apply leading-relaxed tracking-wide text-cs-text;
 }
+
+/* Hide browser default password reveal and clear buttons */
+input::-ms-reveal,
+input::-ms-clear,
+input::-webkit-password-toggle-button {
+  display: none !important;
+}

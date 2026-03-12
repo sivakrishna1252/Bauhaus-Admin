@@ -7,21 +7,127 @@ datasource db {
 }
 
 model Admin {
-  id                 String    @id @default(uuid())
-  email              String    @unique
-  passwordHash       String
-  resetToken         String?
-  resetTokenExpiry   DateTime?
-  createdAt          DateTime  @default(now())
+  id               String    @id @default(uuid())
+  email            String    @unique
+  passwordHash     String
+  createdAt        DateTime  @default(now())
+  resetToken       String?
+  resetTokenExpiry DateTime?
 }
 
 model Client {
-  id        String    @id @default(uuid())
+  id          String    @id @default(uuid())
   username    String    @unique
-  pinHash   String
-  isBlocked Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  projects  Project[]
+  pinHash     String
+  isBlocked   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  address     String?
+  email       String?
+  welcomePin  String?
+  welcomeSent Boolean   @default(false)
+  projects    Project[]
+}
+
+model Project {
+  id               String         @id @default(uuid())
+  title            String
+  description      String
+  status           ProjectStatus  @default(PENDING)
+  clientId         String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  finalDocumentUrl String?
+  isFinalized      Boolean        @default(false)
+  client           Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  entries          ProjectEntry[]
+  timelineSteps    TimelineStep[]
+}
+
+model TimelineStep {
+  id              String                   @id @default(uuid())
+  projectId       String
+  type            TimelineType
+  title           String
+  description     String?
+  startDate       DateTime
+  endDate         DateTime
+  status          TimelineStepStatus       @default(PENDING)
+  order           Int                      @default(0)
+  delayReason     String?
+  delayCount      Int                      @default(0)
+  rejectCount     Int                      @default(0)
+  completionUrl   String?
+  clientFeedback  String?
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
+  paymentTag      String?
+  dailyLogs       DailyWorkLog[]
+  completionFiles TimelineCompletionFile[]
+  feedbackFiles   TimelineFeedbackFile[]
+  iterations      TimelineStepIteration[]
+  delays          TimelineStepDelay[]
+  project         Project                  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model TimelineStepIteration {
+  id              String             @id @default(uuid())
+  timelineStepId  String
+  iterationNumber Int
+  adminFeedback   String?
+  clientFeedback  String?
+  status          TimelineStepStatus @default(PENDING)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  timelineStep    TimelineStep       @relation(fields: [timelineStepId], references: [id], onDelete: Cascade)
+}
+
+model TimelineStepDelay {
+  id              String       @id @default(uuid())
+  timelineStepId  String
+  delayNumber     Int
+  reason          String
+  createdAt       DateTime     @default(now())
+  timelineStep    TimelineStep @relation(fields: [timelineStepId], references: [id], onDelete: Cascade)
+}
+
+model TimelineCompletionFile {
+  id             String       @id @default(uuid())
+  timelineStepId String
+  fileUrl        String
+  fileType       FileType     @default(IMAGE)
+  rejectionRound Int          @default(0)
+  createdAt      DateTime     @default(now())
+  timelineStep   TimelineStep @relation(fields: [timelineStepId], references: [id], onDelete: Cascade)
+}
+
+model TimelineFeedbackFile {
+  id             String       @id @default(uuid())
+  timelineStepId String
+  fileUrl        String
+  fileType       FileType     @default(IMAGE)
+  rejectionRound Int          @default(0)
+  createdAt      DateTime     @default(now())
+  timelineStep   TimelineStep @relation(fields: [timelineStepId], references: [id], onDelete: Cascade)
+}
+
+model DailyWorkLog {
+  id             String       @id @default(uuid())
+  timelineStepId String
+  description    String
+  logDate        DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  timelineStep   TimelineStep @relation(fields: [timelineStepId], references: [id], onDelete: Cascade)
+}
+
+model ProjectEntry {
+  id          String        @id @default(uuid())
+  projectId   String
+  description String
+  createdAt   DateTime      @default(now())
+  fileType    FileType      @default(IMAGE)
+  fileUrl     String
+  category    EntryCategory @default(TIMELINE)
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 enum ProjectStatus {
@@ -31,39 +137,30 @@ enum ProjectStatus {
   COMPLETED
 }
 
-model Project {
-  id          String         @id @default(uuid())
-  title       String
-  description String
-  status      ProjectStatus  @default(PENDING)
-  clientId    String
-  client      Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  entries     ProjectEntry[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-}
-
 enum FileType {
-    IMAGE
-    VIDEO
-    PDF
+  IMAGE
+  VIDEO
+  PDF
 }
 
 enum EntryCategory {
-    TIMELINE
-    AGREEMENT
-    PAYMENT_INVOICE
-    HANDOVER
-    CERTIFICATE
+  TIMELINE
+  AGREEMENT
+  PAYMENT_INVOICE
+  HANDOVER
+  CERTIFICATE
+  PROJECT_DOCUMENT
+  CLIENT_UPLOAD
 }
 
-model ProjectEntry {
-  id          String        @id @default(uuid())
-  projectId   String
-  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  fileUrl     String        // Supports both images and videos
-  fileType    FileType      @default(IMAGE)
-  description String
-  category    EntryCategory @default(TIMELINE)
-  createdAt   DateTime      @default(now())
+enum TimelineType {
+  DESIGN
+  PROJECT
+}
+
+enum TimelineStepStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
 }

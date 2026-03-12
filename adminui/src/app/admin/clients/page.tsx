@@ -45,6 +45,7 @@ interface Client {
     };
     lastActive?: string;
     pin?: string;
+    email?: string;
 }
 
 export default function ClientsPage() {
@@ -57,6 +58,7 @@ export default function ClientsPage() {
     const [isAdding, setIsAdding] = useState(false);
     const [newUsername, setNewUsername] = useState("");
     const [newPin, setNewPin] = useState("");
+    const [newEmail, setNewEmail] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
 
@@ -121,7 +123,7 @@ export default function ClientsPage() {
         setFormError("");
 
         try {
-            const newClient = await createClient(newUsername.replace("@", ""), newPin);
+            const newClient = await createClient(newUsername.replace("@", ""), newPin, newEmail);
             setClients([{
                 ...newClient,
                 projectStatus: { inProgress: 0, completed: 0, delayed: 0, notStarted: 0 },
@@ -130,6 +132,7 @@ export default function ClientsPage() {
             setIsAdding(false);
             setNewUsername("");
             setNewPin("");
+            setNewEmail("");
         } catch (err: any) {
             setFormError(err.message || "Failed to add client");
         } finally {
@@ -221,6 +224,20 @@ export default function ClientsPage() {
                             </div>
 
                             <div className="flex flex-col gap-3">
+                                <label className="text-sm font-medium text-cs-heading">Email Address</label>
+                                <div className="relative">
+                                    <Input
+                                        type="email"
+                                        placeholder="johndoe@example.com"
+                                        className="h-11 border-cs-border"
+                                        value={newEmail}
+                                        onChange={(e) => setNewEmail(e.target.value)}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3">
                                 <label className="text-sm font-medium text-cs-heading">4-Digit PIN</label>
                                 <div className="relative">
                                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cs-text" />
@@ -266,6 +283,7 @@ export default function ClientsPage() {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg text-cs-heading dark:text-white">@{selectedClient.username}</h3>
+                                    {selectedClient.email && <p className="text-xs text-cs-text mb-1">{selectedClient.email}</p>}
                                     <div className="flex items-center gap-2 mt-1 text-sm text-cs-text/80">
                                         <CheckCircle2 size={12} className={selectedClient.isBlocked ? "text-rose-500" : "text-emerald-500"} />
                                         {selectedClient.isBlocked ? "Blocked" : "Active Account"}
@@ -396,54 +414,58 @@ export default function ClientsPage() {
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        {/* Table View - Hidden on Mobile */}
+                        <table className="w-full text-left border-collapse hidden md:table">
                             <thead>
                                 <tr className="border-b border-cs-border bg-cs-bg/50 dark:border-zinc-800 dark:bg-zinc-800/50 text-xs sm:text-base">
-                                    <th className="p-2 sm:p-4 font-bold text-cs-heading dark:text-zinc-300 whitespace-nowrap">Client</th>
-                                    <th className="p-2 sm:p-4 font-bold text-cs-heading dark:text-zinc-300">Projects Status</th>
-                                    <th className="hidden sm:table-cell p-2 sm:p-4 font-bold text-cs-heading dark:text-zinc-300">Last Active</th>
-                                    <th className="hidden sm:table-cell p-2 sm:p-4 font-bold text-cs-heading dark:text-zinc-300">Status</th>
-                                    <th className="p-2 sm:p-4 font-bold text-cs-heading dark:text-zinc-300 text-right">Actions</th>
+                                    <th className="p-4 font-bold text-cs-heading dark:text-zinc-300 whitespace-nowrap">Client</th>
+                                    <th className="p-4 font-bold text-cs-heading dark:text-zinc-300">Projects Status</th>
+                                    <th className="p-4 font-bold text-cs-heading dark:text-zinc-300">Last Active</th>
+                                    <th className="p-4 font-bold text-cs-heading dark:text-zinc-300">Status</th>
+                                    <th className="p-4 font-bold text-cs-heading dark:text-zinc-300 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredClients.map((client) => (
                                     <tr key={client.id} className="border-b border-cs-border hover:bg-cs-bg/30 transition-colors last:border-0 dark:border-zinc-800 dark:hover:bg-zinc-800/30 text-xs sm:text-base">
-                                        <td className="p-2 sm:p-4 whitespace-nowrap">
-                                            <div className="flex items-center gap-2 sm:gap-3">
-                                                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-[#C5A059]/10 flex items-center justify-center font-bold text-cs-primary-100 dark:bg-[#C5A059]/20 dark:text-cs-primary-100 text-xs sm:text-base">
+                                        <td className="p-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 rounded-full bg-[#C5A059]/10 flex items-center justify-center font-bold text-cs-primary-100 dark:bg-[#C5A059]/20 dark:text-cs-primary-100">
                                                     {client.username.charAt(0)}
                                                 </div>
-                                                <span className="font-bold text-cs-heading dark:text-zinc-200">{client.username}</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-bold text-cs-heading dark:text-zinc-200">{client.username}</span>
+                                                    {client.email && <span className="text-[10px] text-cs-text">{client.email}</span>}
+                                                </div>
                                             </div>
                                         </td>
 
-                                        <td className="p-2 sm:p-4 text-cs-text dark:text-zinc-400">
+                                        <td className="p-4 text-cs-text dark:text-zinc-400">
                                             <div className="flex flex-col gap-1">
-                                                {(client.projectStatus?.inProgress || 0) > 0 && <span className="text-[10px] sm:text-xs font-bold text-cs-primary-200 bg-[#C5A059]/10 px-1.5 py-0.5 rounded-md w-fit dark:bg-[#C5A059]/20 dark:text-cs-primary-100 whitespace-nowrap">In Progress: {client.projectStatus?.inProgress}</span>}
-                                                {(client.projectStatus?.delayed || 0) > 0 && <span className="text-[10px] sm:text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md w-fit dark:bg-amber-900/20 dark:text-amber-400 whitespace-nowrap">Delayed: {client.projectStatus?.delayed}</span>}
-                                                {(client.projectStatus?.completed || 0) > 0 && <span className="text-[10px] sm:text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md w-fit dark:bg-emerald-900/20 dark:text-emerald-400 whitespace-nowrap">Completed: {client.projectStatus?.completed}</span>}
-                                                {(client.projectStatus?.notStarted || 0) > 0 && <span className="text-[10px] sm:text-xs font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded-md w-fit dark:bg-zinc-800 dark:text-zinc-400 whitespace-nowrap">Not Started: {client.projectStatus?.notStarted}</span>}
-                                                {(!client.projectStatus || Object.values(client.projectStatus).every(v => v === 0)) && <span className="text-[10px] sm:text-xs text-zinc-400 whitespace-nowrap">No Projects</span>}
+                                                {(client.projectStatus?.inProgress || 0) > 0 && <span className="text-xs font-bold text-cs-primary-200 bg-[#C5A059]/10 px-1.5 py-0.5 rounded-md w-fit dark:bg-[#C5A059]/20 dark:text-cs-primary-100 whitespace-nowrap">In Progress: {client.projectStatus?.inProgress}</span>}
+                                                {(client.projectStatus?.delayed || 0) > 0 && <span className="text-xs font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-md w-fit dark:bg-amber-900/20 dark:text-amber-400 whitespace-nowrap">Delayed: {client.projectStatus?.delayed}</span>}
+                                                {(client.projectStatus?.completed || 0) > 0 && <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-md w-fit dark:bg-emerald-900/20 dark:text-emerald-400 whitespace-nowrap">Completed: {client.projectStatus?.completed}</span>}
+                                                {(client.projectStatus?.notStarted || 0) > 0 && <span className="text-xs font-bold text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded-md w-fit dark:bg-zinc-800 dark:text-zinc-400 whitespace-nowrap">Not Started: {client.projectStatus?.notStarted}</span>}
+                                                {(!client.projectStatus || Object.values(client.projectStatus).every(v => v === 0)) && <span className="text-xs text-zinc-400 whitespace-nowrap">No Projects</span>}
                                             </div>
                                         </td>
 
-                                        <td className="hidden sm:table-cell p-2 sm:p-4 text-sm text-cs-text dark:text-zinc-400 font-medium">
+                                        <td className="p-4 text-sm text-cs-text dark:text-zinc-400 font-medium whitespace-nowrap">
                                             {client.lastActive}
                                         </td>
-                                        <td className="hidden sm:table-cell p-2 sm:p-4">
+                                        <td className="p-4 whitespace-nowrap">
                                             {!client.isBlocked ? (
-                                                <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full text-xs font-bold dark:bg-emerald-500/10 whitespace-nowrap">
+                                                <span className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full text-xs font-bold dark:bg-emerald-500/10 uppercase tracking-tighter">
                                                     <CheckCircle2 size={12} /> Active
                                                 </span>
                                             ) : (
-                                                <span className="inline-flex items-center gap-1 text-rose-600 bg-rose-50 px-2 py-1 rounded-full text-xs font-bold dark:bg-rose-500/10 whitespace-nowrap">
+                                                <span className="inline-flex items-center gap-1 text-rose-600 bg-rose-50 px-2 py-1 rounded-full text-xs font-bold dark:bg-rose-500/10 uppercase tracking-tighter">
                                                     <Ban size={12} /> Blocked
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="p-2 sm:p-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
+                                        <td className="p-4 text-right">
+                                            <div className="flex items-center justify-end gap-2 text-right">
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
@@ -466,6 +488,58 @@ export default function ClientsPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        {/* Card View - Visible on Mobile Only */}
+                        <div className="md:hidden divide-y divide-cs-border dark:divide-zinc-800">
+                            {filteredClients.map((client) => (
+                                <div key={client.id} className="p-4 space-y-4 hover:bg-cs-bg/10">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-full bg-[#C5A059]/10 flex items-center justify-center font-bold text-cs-primary-100 dark:bg-[#C5A059]/20">
+                                                {client.username.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold text-cs-heading dark:text-zinc-100">{client.username}</p>
+                                                <p className="text-[10px] text-cs-text">{client.email}</p>
+                                            </div>
+                                        </div>
+                                        {!client.isBlocked ? (
+                                            <span className="text-[10px] font-black uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Active</span>
+                                        ) : (
+                                            <span className="text-[10px] font-black uppercase text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full">Blocked</span>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        {(client.projectStatus?.inProgress || 0) > 0 && <span className="text-[10px] font-bold text-cs-primary-200 bg-[#C5A059]/10 px-2 py-1 rounded">IP: {client.projectStatus?.inProgress}</span>}
+                                        {(client.projectStatus?.delayed || 0) > 0 && <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">D: {client.projectStatus?.delayed}</span>}
+                                        {(client.projectStatus?.completed || 0) > 0 && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">C: {client.projectStatus?.completed}</span>}
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-2">
+                                        <p className="text-[10px] text-cs-text font-medium">Last: {client.lastActive}</p>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => setSelectedClient(client)}
+                                                className="h-8 text-[10px] font-bold uppercase border-cs-border"
+                                            >
+                                                Manage
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => handleDeleteClient(client.id)}
+                                                className="h-8 w-8 p-0 text-rose-500"
+                                            >
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                         {filteredClients.length === 0 && (
                             <div className="flex flex-col items-center justify-center p-12 text-center">
                                 <div className="h-16 w-16 bg-cs-bg rounded-full flex items-center justify-center mb-4 dark:bg-zinc-800">

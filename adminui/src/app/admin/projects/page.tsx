@@ -94,7 +94,6 @@ export default function ProjectsPage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [clientId, setClientId] = useState("");
-    const [status, setStatus] = useState<"PENDING" | "IN_PROGRESS" | "DELAYED" | "COMPLETED">("PENDING");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
 
@@ -137,8 +136,7 @@ export default function ProjectsPage() {
             const selectedClient = clients.find(c => c.id === clientId);
             const projectWithClient = {
                 ...newProject,
-                client: { username: selectedClient?.username || "Unknown" },
-                status: status || "PENDING" // Use status from form as it might be set
+                client: { username: selectedClient?.username || "Unknown" }
             };
 
             setProjects([projectWithClient, ...projects]);
@@ -146,7 +144,6 @@ export default function ProjectsPage() {
             setTitle("");
             setDescription("");
             setClientId("");
-            setStatus("PENDING");
         } catch (err: any) {
             setFormError(err.message || "Failed to create project");
         } finally {
@@ -232,24 +229,6 @@ export default function ProjectsPage() {
                                             ))}
                                         </SelectContent>
 
-                                    </Select>
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col gap-3">
-                                <label className="text-sm font-medium text-cs-heading">Project Status</label>
-                                <div className="relative">
-                                    <Layers className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cs-text z-10" />
-                                    <Select value={status} onValueChange={(val) => setStatus(val as any)} required>
-                                        <SelectTrigger className="w-full pl-12 h-11 border-cs-border bg-white text-sm focus:ring-1 focus:ring-cs-primary-100 rounded-lg">
-                                            <SelectValue placeholder="Select status..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-white border-cs-border rounded-xl">
-                                            <SelectItem value="PENDING">Not Started</SelectItem>
-                                            <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                                            <SelectItem value="COMPLETED">Completed</SelectItem>
-                                            <SelectItem value="DELAYED">Delayed</SelectItem>
-                                        </SelectContent>
                                     </Select>
                                 </div>
                             </div>
@@ -379,7 +358,7 @@ export default function ProjectsPage() {
 
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between text-sm">
-                                        <span className="text-cs-text font-medium flex items-center gap-1.5"><Layers size={14} />{project.entries?.length || 0} Updates</span>
+                                        {/* <span className="text-cs-text font-medium flex items-center gap-1.5"><Layers size={14} />{project.entries?.length || 0} Updates</span> */}
                                         <span className="font-bold text-cs-heading dark:text-zinc-200 uppercase text-[10px]">Portal Ready</span>
                                     </div>
                                 </div>
