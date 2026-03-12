@@ -403,7 +403,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                 open: true,
                 tone: 'success',
                 title: 'Handover PDF Generated',
-                description: 'The final handover document has been created successfully. You can now download it from the client portal and from the ZIP export.'
+                description: 'The final handover document has been created successfully. can be found in the client portal and from the ZIP export.'
             });
             await fetchProject();
         } catch (err: any) {
