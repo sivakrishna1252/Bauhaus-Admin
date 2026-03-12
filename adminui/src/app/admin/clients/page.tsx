@@ -18,16 +18,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-    SheetFooter,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { AdminPopup } from "@/components/ui/admin-popup";
 
 import { getAllClients, createClient, resetClientPin, blockClient, unblockClient, deleteClient } from "@/services/adminService";
 import { getAllProjects } from "@/services/projectService";
@@ -65,6 +58,19 @@ export default function ClientsPage() {
     // Detail View State
     const [selectedClient, setSelectedClient] = useState<Client | null>(null);
     const [viewPin, setViewPin] = useState("");
+    const [deleteClientId, setDeleteClientId] = useState<string | null>(null);
+    const [isDeletingClient, setIsDeletingClient] = useState(false);
+    const [pinPopup, setPinPopup] = useState<{
+        open: boolean;
+        tone: "info" | "success" | "danger";
+        title: string;
+        description: string;
+    }>({
+        open: false,
+        tone: "info",
+        title: "",
+        description: ""
+    });
 
     useEffect(() => {
         fetchClients();
@@ -102,18 +108,33 @@ export default function ClientsPage() {
     };
 
     const handleUpdatePin = async () => {
-        if (!viewPin || viewPin.length !== 4) {
-            alert("PIN must be 4 digits");
+        if (!viewPin || viewPin.length !== 4 || !/^\d{4}$/.test(viewPin)) {
+            setPinPopup({
+                open: true,
+                tone: "danger",
+                title: "Invalid PIN",
+                description: "Security PIN must be exactly 4 digits. Only numbers 0–9 are allowed."
+            });
             return;
         }
         if (!selectedClient) return;
 
         try {
             await resetClientPin(selectedClient.id, viewPin);
-            alert("PIN updated successfully");
+            setPinPopup({
+                open: true,
+                tone: "success",
+                title: "PIN Updated",
+                description: `Security PIN for @${selectedClient.username} has been updated successfully.`
+            });
             setViewPin("");
         } catch (err: any) {
-            alert(err.message || "Failed to update PIN");
+            setPinPopup({
+                open: true,
+                tone: "danger",
+                title: "PIN Update Failed",
+                description: err?.message || "Failed to update the client's PIN. Please try again."
+            });
         }
     }
 
@@ -158,18 +179,24 @@ export default function ClientsPage() {
         }
     };
 
-    const handleDeleteClient = async (id: string) => {
-        if (!confirm("Are you sure you want to permanently delete this client? This will also delete all their projects and data. This action cannot be undone.")) return;
+    const handleDeleteClient = (id: string) => {
+        setDeleteClientId(id);
+    };
 
+    const performDeleteClient = async () => {
+        if (!deleteClientId) return;
+        setIsDeletingClient(true);
         try {
-            await deleteClient(id);
-            setClients(clients.filter(c => c.id !== id));
-            if (selectedClient && selectedClient.id === id) {
+            await deleteClient(deleteClientId);
+            setClients(prev => prev.filter(c => c.id !== deleteClientId));
+            if (selectedClient && selectedClient.id === deleteClientId) {
                 setSelectedClient(null);
             }
-            alert("Client and associated data deleted successfully");
         } catch (err: any) {
             alert(err.message || "Failed to delete client");
+        } finally {
+            setIsDeletingClient(false);
+            setDeleteClientId(null);
         }
     };
 
@@ -246,7 +273,19 @@ export default function ClientsPage() {
                                         maxLength={4}
                                         className="pl-12 h-11 border-cs-border"
                                         value={newPin}
-                                        onChange={(e) => setNewPin(e.target.value)}
+                                        onChange={(e) => {
+                                            const raw = e.target.value;
+                                            const digitsOnly = raw.replace(/\D/g, "").slice(0, 4);
+                                            if (raw && /\D/.test(raw)) {
+                                                setPinPopup({
+                                                    open: true,
+                                                    tone: "danger",
+                                                    title: "Only Numbers Allowed",
+                                                    description: "Security PIN can only contain digits 0–9."
+                                                });
+                                            }
+                                            setNewPin(digitsOnly);
+                                        }}
                                         required
                                     />
                                 </div>
@@ -335,11 +374,46 @@ export default function ClientsPage() {
                                                     maxLength={4}
                                                     className="pl-12 h-11 border-cs-border focus:ring-cs-primary-100"
                                                     value={viewPin}
-                                                    onChange={(e) => setViewPin(e.target.value)}
+                                                    onChange={(e) => {
+                                                        const raw = e.target.value;
+                                                        const digitsOnly = raw.replace(/\D/g, "").slice(0, 4);
+                                                        if (raw && /\D/.test(raw)) {
+                                                            setPinPopup({
+                                                                open: true,
+                                                                tone: "danger",
+                                                                title: "Only Numbers Allowed",
+                                                                description: "Security PIN can only contain digits 0–9."
+                                                            });
+                                                        }
+                                                        setViewPin(digitsOnly);
+                                                    }}
                                                 />
                                             </div>
                                             <Button onClick={handleUpdatePin} className="h-11 bg-cs-primary-100 hover:bg-cs-primary-200 text-white shadow-sm font-bold">Update</Button>
                                         </div>
+                                        {pinPopup.open && (
+                                            <div className="mt-2 rounded-2xl border px-4 py-3 text-xs leading-relaxed bg-rose-50 border-rose-200 text-rose-700 flex items-center justify-between gap-3">
+                                                <div className="flex items-start gap-2">
+                                                    <span className="mt-[2px] inline-flex h-4 w-4 items-center justify-center rounded-full border border-rose-500 text-rose-600 text-[9px] font-bold">
+                                                        !
+                                                    </span>
+                                                    <div>
+                                                        <p className="font-black uppercase tracking-[0.18em] mb-1 text-[10px]">
+                                                            {pinPopup.title}
+                                                        </p>
+                                                        <p>{pinPopup.description}</p>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="outline"
+                                                    size="xs"
+                                                    className="h-7 px-3 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] border-rose-300 text-rose-700 hover:bg-rose-50"
+                                                    onClick={() => setPinPopup(prev => ({ ...prev, open: false }))}
+                                                >
+                                                    OK
+                                                </Button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="pt-4 flex flex-col gap-3">
@@ -552,6 +626,20 @@ export default function ClientsPage() {
                     </div>
                 )}
             </div>
+
+            <AdminPopup
+                open={!!deleteClientId}
+                tone="danger"
+                mode="confirm"
+                title="Delete Client & All Data"
+                description="Are you sure you want to permanently delete this client? This will also delete all their projects and data. This action cannot be undone."
+                confirmLabel={isDeletingClient ? "Deleting…" : "Delete Client"}
+                cancelLabel="Cancel"
+                loading={isDeletingClient}
+                onConfirm={performDeleteClient}
+                onClose={() => setDeleteClientId(null)}
+            />
+
         </div>
     );
 }

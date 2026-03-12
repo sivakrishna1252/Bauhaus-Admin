@@ -20,28 +20,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetTrigger,
-    SheetFooter,
-} from "@/components/ui/sheet";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AdminPopup } from "@/components/ui/admin-popup";
 
 import { getAllProjects, createProject, deleteProject } from "@/services/projectService";
 import { getAllClients } from "@/services/adminService";
@@ -96,6 +78,8 @@ export default function ProjectsPage() {
     const [clientId, setClientId] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
+    const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
+    const [isDeletingProject, setIsDeletingProject] = useState(false);
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -151,14 +135,21 @@ export default function ProjectsPage() {
         }
     };
 
-    const handleDeleteProject = async (projectId: string) => {
-        if (!confirm("Are you sure you want to delete this project?")) return;
+    const handleDeleteProject = (projectId: string) => {
+        setDeleteProjectId(projectId);
+    };
 
+    const performDeleteProject = async () => {
+        if (!deleteProjectId) return;
+        setIsDeletingProject(true);
         try {
-            await deleteProject(projectId);
-            setProjects(projects.filter(p => p.id !== projectId));
+            await deleteProject(deleteProjectId);
+            setProjects(prev => prev.filter(p => p.id !== deleteProjectId));
         } catch (err: any) {
             alert(err.message || "Failed to delete project");
+        } finally {
+            setIsDeletingProject(false);
+            setDeleteProjectId(null);
         }
     };
 
@@ -390,6 +381,19 @@ export default function ProjectsPage() {
                     )}
                 </div>
             )}
+
+            <AdminPopup
+                open={!!deleteProjectId}
+                tone="danger"
+                mode="confirm"
+                title="Delete Project"
+                description="Are you sure you want to delete this project? This will remove the project and its data from the catalog. This action cannot be undone."
+                confirmLabel={isDeletingProject ? "Deleting…" : "Delete Project"}
+                cancelLabel="Cancel"
+                loading={isDeletingProject}
+                onConfirm={performDeleteProject}
+                onClose={() => setDeleteProjectId(null)}
+            />
         </div>
     );
 }

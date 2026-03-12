@@ -63,21 +63,9 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
-    SheetFooter,
-} from "@/components/ui/sheet";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AdminPopup } from "@/components/ui/admin-popup";
 
 
 // Local interfaces removed in favor of projectService imports
@@ -114,6 +102,20 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const finalBoxRef = useRef<HTMLDivElement>(null);
     const [greenLineHeight, setGreenLineHeight] = useState<number | string>(0);
     const [isDeleteTimelineConfirmOpen, setIsDeleteTimelineConfirmOpen] = useState(false);
+    const [summaryStatus, setSummaryStatus] = useState<{ type: 'success' | 'error' | null; text: string }>({ type: null, text: "" });
+    const [isInitializeConfirmOpen, setIsInitializeConfirmOpen] = useState(false);
+    const [isInitializingProject, setIsInitializingProject] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [isDeletingProject, setIsDeletingProject] = useState(false);
+    const [isDownloadConfirmOpen, setIsDownloadConfirmOpen] = useState(false);
+    const [isDownloadingArchive, setIsDownloadingArchive] = useState(false);
+    const [statusPopup, setStatusPopup] = useState<{ open: boolean, tone: 'info' | 'success' | 'danger', title: string, description: string }>({
+        open: false,
+        tone: 'info',
+        title: '',
+        description: ''
+    });
+    const [isDelaying, setIsDelaying] = useState(false);
 
     useEffect(() => {
         const updateLine = () => {
@@ -207,6 +209,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const handleDelayMilestone = async () => {
         if (!editingStep || !delayForm.endDate || !delayForm.delayReason) return;
         try {
+            setIsDelaying(true);
             const oldEndDate = new Date(editingStep.endDate);
             const newEndDate = new Date(delayForm.endDate);
             const diffTime = newEndDate.getTime() - oldEndDate.getTime();
@@ -254,8 +257,16 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             setDelayForm({ endDate: '', delayReason: '' });
             const tlData = await getProjectTimeline(id);
             setTimeline(tlData);
-            alert("Timeline adjusted and client notified.");
-        } catch (err: any) { alert(err.message); }
+        } catch (err: any) {
+            setStatusPopup({
+                open: true,
+                tone: 'danger',
+                title: 'Failed to Update Timeline',
+                description: err?.message || 'There was a problem adjusting this milestone. Please try again.'
+            });
+        } finally {
+            setIsDelaying(false);
+        }
     };
 
     const [completeDescription, setCompleteDescription] = useState("");
@@ -263,6 +274,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const handleCompleteMilestone = async () => {
         if (!editingStep) return;
         try {
+            setIsUploading(true);
             const formData = new FormData();
             completeFiles.forEach(file => {
                 formData.append('media', file);
@@ -278,6 +290,9 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             const tlData = await getProjectTimeline(id);
             setTimeline(tlData);
         } catch (err: any) { alert(err.message); }
+        finally {
+            setIsUploading(false);
+        }
     };
 
     const handleBulkUpdate = async (notifySetup = false) => {
@@ -291,14 +306,32 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         } catch (err: any) { alert(err.message); }
     };
 
-    const handleInitializeSetup = async () => {
-        if (!confirm("This will notify the client that the project setup is complete and share their credentials again. Proceed?")) return;
+    const handleInitializeSetup = () => {
+        setIsInitializeConfirmOpen(true);
+    };
+
+    const performInitializeSetup = async () => {
+        setIsInitializingProject(true);
         try {
             await initializeProject(id);
-            alert("Project finalized! Client has been notified.");
-            // Refresh project data so isFinalized updates in the UI
+            setIsInitializeConfirmOpen(false);
             await fetchProject();
-        } catch (err: any) { alert(err.message); }
+            setStatusPopup({
+                open: true,
+                tone: 'success',
+                title: 'Client Portal Activated',
+                description: 'Project setup has been finalized and the client has received their portal credentials by email.'
+            });
+        } catch (err: any) {
+            setStatusPopup({
+                open: true,
+                tone: 'danger',
+                title: 'Failed to Finalize Setup',
+                description: err?.message || 'There was a problem finalizing this project. Please try again in a moment.'
+            });
+        } finally {
+            setIsInitializingProject(false);
+        }
     };
 
     const handleClearTimeline = () => {
@@ -311,6 +344,41 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
             setIsDeleteTimelineConfirmOpen(false);
             fetchProject();
         } catch (err: any) { alert(err.message); }
+    };
+
+    const performDeleteProject = async () => {
+        setIsDeletingProject(true);
+        try {
+            await deleteProject(id);
+            window.location.href = '/admin/dashboard';
+        } catch (err: any) {
+            setStatusPopup({
+                open: true,
+                tone: 'danger',
+                title: 'Delete Failed',
+                description: err?.message || 'Failed to delete this project. Please try again.'
+            });
+        } finally {
+            setIsDeletingProject(false);
+            setIsDeleteConfirmOpen(false);
+        }
+    };
+
+    const performDownloadArchive = async () => {
+        setIsDownloadingArchive(true);
+        try {
+            await downloadProjectArchive(id, project?.title || 'Project');
+        } catch (err: any) {
+            setStatusPopup({
+                open: true,
+                tone: 'danger',
+                title: 'Download Failed',
+                description: err?.message || 'Failed to start ZIP download. Please try again.'
+            });
+        } finally {
+            setIsDownloadingArchive(false);
+            setIsDownloadConfirmOpen(false);
+        }
     };
 
     const isStageLocked = (type: TimelineType) => {
@@ -331,9 +399,21 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
     const handleFinalDocument = async () => {
         try {
             await generateFinalDocument(id);
-            alert("Final handover document created successfully!");
-            window.location.reload();
-        } catch (err: any) { alert(err.message); }
+            setStatusPopup({
+                open: true,
+                tone: 'success',
+                title: 'Handover PDF Generated',
+                description: 'The final handover document has been created successfully. You can now download it from the client portal and from the ZIP export.'
+            });
+            await fetchProject();
+        } catch (err: any) {
+            setStatusPopup({
+                open: true,
+                tone: 'danger',
+                title: 'PDF Generation Failed',
+                description: err?.message || 'Failed to generate the final handover document. Please try again.'
+            });
+        }
     }
 
 
@@ -1184,7 +1264,19 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                                         {showDeleteBtn && (
                                                                                             <>
                                                                                                 {(showEditBtn || showDelayBtn) && <DropdownMenuSeparator />}
-                                                                                                <DropdownMenuItem onClick={() => { if (confirm('Delete milestone?')) deleteTimelineStep(step.id).then(() => fetchProject()); }} className="text-[11px] font-bold uppercase tracking-tight p-2 text-rose-600 cursor-pointer gap-2">
+                                                                                                <DropdownMenuItem
+                                                                                                    onClick={() => {
+                                                                                                        setStatusPopup({
+                                                                                                            open: true,
+                                                                                                            tone: 'danger',
+                                                                                                            title: 'Delete Milestone',
+                                                                                                            description: 'This will permanently delete this milestone and its associated files from the timeline. This action cannot be undone.'
+                                                                                                        });
+                                                                                                        // attach a one-time confirm handler
+                                                                                                        (window as any).__confirmDeleteStepId = step.id;
+                                                                                                    }}
+                                                                                                    className="text-[11px] font-bold uppercase tracking-tight p-2 text-rose-600 cursor-pointer gap-2"
+                                                                                                >
                                                                                                     <Trash2 size={14} /> Delete
                                                                                                 </DropdownMenuItem>
                                                                                             </>
@@ -1195,6 +1287,77 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                         </div>
                                                                     </div>
                                                                 )}
+
+            {/* Initialize Project Confirmation Modal */}
+            <AdminPopup
+                open={isInitializeConfirmOpen}
+                tone="info"
+                mode="confirm"
+                title="Finalize Client Setup"
+                description="This will notify the client that their project portal is ready and resend their login PIN/credentials. Make sure all milestones and dates are correct before proceeding."
+                confirmLabel={isInitializingProject ? "Sending…" : "Yes, Notify Client"}
+                cancelLabel="Cancel"
+                loading={isInitializingProject}
+                onConfirm={performInitializeSetup}
+                onClose={() => setIsInitializeConfirmOpen(false)}
+            />
+
+            {/* Delete project confirmation */}
+            <AdminPopup
+                open={isDeleteConfirmOpen}
+                tone="danger"
+                mode="confirm"
+                title="Delete Project & All Files"
+                description="This will permanently delete this project, all milestones, and all uploaded files from the server. This action cannot be undone."
+                confirmLabel={isDeletingProject ? "Deleting…" : "Delete Project"}
+                cancelLabel="Cancel"
+                loading={isDeletingProject}
+                onConfirm={performDeleteProject}
+                onClose={() => setIsDeleteConfirmOpen(false)}
+            />
+
+            {/* Download ZIP confirmation */}
+            <AdminPopup
+                open={isDownloadConfirmOpen}
+                tone="info"
+                mode="confirm"
+                title="Download Full ZIP"
+                description="This will generate and download a ZIP archive containing the approved work files, documents, and summary for this project."
+                confirmLabel={isDownloadingArchive ? "Preparing…" : "Download ZIP"}
+                cancelLabel="Cancel"
+                loading={isDownloadingArchive}
+                onConfirm={performDownloadArchive}
+                onClose={() => setIsDownloadConfirmOpen(false)}
+            />
+
+            {/* Global status / alert popup */}
+            <AdminPopup
+                open={statusPopup.open}
+                tone={statusPopup.tone}
+                mode={(window as any).__confirmDeleteStepId ? "confirm" : "alert"}
+                title={statusPopup.title}
+                description={statusPopup.description}
+                confirmLabel={(window as any).__confirmDeleteStepId ? "Delete Milestone" : "OK"}
+                cancelLabel="Cancel"
+                onConfirm={async () => {
+                    const stepId = (window as any).__confirmDeleteStepId as string | undefined;
+                    if (stepId) {
+                        try {
+                            await deleteTimelineStep(stepId);
+                            await fetchProject();
+                        } catch (err: any) {
+                            console.error(err);
+                        } finally {
+                            (window as any).__confirmDeleteStepId = undefined;
+                            setStatusPopup(prev => ({ ...prev, open: false }));
+                        }
+                    }
+                }}
+                onClose={() => {
+                    (window as any).__confirmDeleteStepId = undefined;
+                    setStatusPopup(prev => ({ ...prev, open: false }));
+                }}
+            />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1228,11 +1391,25 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                     disabled={isSummarizing}
                                                                     onClick={async () => {
                                                                         setIsSummarizing(true);
+                                                                        setSummaryStatus({ type: null, text: "" });
                                                                         try {
                                                                             await summarizeProject(id);
-                                                                            alert("Project summary statement and ZIP archive emailed to client!");
+                                                                            setStatusPopup({
+                                                                                open: true,
+                                                                                tone: 'success',
+                                                                                title: 'Summary Email Sent',
+                                                                                description: 'Project summary and ZIP archive have been emailed to the client successfully.'
+                                                                            });
                                                                         } catch (e: any) {
-                                                                            alert(e.message || "Failed to send summary");
+                                                                            const msg = e?.message || "Server took too long to generate the summary. Please try again in a few minutes.";
+                                                                            setStatusPopup({
+                                                                                open: true,
+                                                                                tone: 'danger',
+                                                                                title: 'Summary Email Failed',
+                                                                                description: msg.includes("Failed to fetch")
+                                                                                    ? "Server took too long to respond while generating the summary email. The email may still be processing in the background; please refresh later and try again if needed."
+                                                                                    : msg
+                                                                            });
                                                                         } finally {
                                                                             setIsSummarizing(false);
                                                                         }
@@ -1254,22 +1431,15 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                             <div className="flex flex-col gap-2">
                                                                 <Button
                                                                     variant="outline"
-                                                                    onClick={() => downloadProjectArchive(id, project?.title || 'Project')}
+                                                                    onClick={() => setIsDownloadConfirmOpen(true)}
                                                                     className="w-full border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest"
                                                                 >
                                                                     <Download size={16} className="mr-2" /> Download Full ZIP
                                                                 </Button>
                                                                 <Button
                                                                     variant="ghost"
-                                                                    onClick={async () => {
-                                                                        if (confirm("WARNING: This will PERMANENTLY delete this project, all its milestones, and ALL physical files from the server. This cannot be undone. \n\nAre you absolutely sure?")) {
-                                                                            try {
-                                                                                await deleteProject(id);
-                                                                                window.location.href = '/admin/dashboard';
-                                                                            } catch (e: any) {
-                                                                                alert(e.message);
-                                                                            }
-                                                                        }
+                                                                    onClick={() => {
+                                                                        setIsDeleteConfirmOpen(true);
                                                                     }}
                                                                     className="w-full text-rose-500 hover:bg-rose-50 hover:text-rose-600 h-11 rounded-xl text-[10px] font-bold uppercase tracking-widest"
                                                                 >
@@ -1758,6 +1928,16 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
             <Sheet open={isCompleteModalOpen} onOpenChange={setIsCompleteModalOpen}>
                 <SheetContent className="bg-cs-bg sm:max-w-md w-full border-cs-border">
+                    {isUploading && (
+                        <div className="absolute inset-0 z-10 bg-white/80 dark:bg-zinc-950/80 flex items-center justify-center">
+                            <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-lg">
+                                <Loader2 className="h-4 w-4 animate-spin text-[#C5A059]" />
+                                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-700 dark:text-zinc-200">
+                                    Uploading files & notifying client…
+                                </span>
+                            </div>
+                        </div>
+                    )}
                     <SheetHeader className="mb-8">
                         <SheetTitle className="text-2xl font-black text-cs-heading font-serif tracking-tight">Mark Complete</SheetTitle>
                         <SheetDescription className="text-cs-text italic text-sm mt-2">
@@ -1813,9 +1993,13 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
                         <Button
                             onClick={handleCompleteMilestone}
-                            className="w-full bg-[#C5A059] text-white hover:bg-[#A38548] h-12 uppercase tracking-widest font-bold text-xs shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
+                            disabled={isUploading}
+                            className="w-full bg-[#C5A059] text-white hover:bg-[#A38548] disabled:opacity-60 disabled:cursor-not-allowed h-12 uppercase tracking-widest font-bold text-xs shadow-[0_8px_30px_rgb(0,0,0,0.12)]"
                         >
-                            Submit for Review{completeFiles.length > 0 ? ` (${completeFiles.length} files)` : ""}
+                            {isUploading ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                            ) : null}
+                            {isUploading ? 'Submitting…' : `Submit for Review${completeFiles.length > 0 ? ` (${completeFiles.length} files)` : ""}`}
                         </Button>
                     </div>
                 </SheetContent>
@@ -1823,6 +2007,16 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
             <Sheet open={isDelayModalOpen} onOpenChange={setIsDelayModalOpen}>
                 <SheetContent className="bg-cs-bg sm:max-w-md w-full border-cs-border">
+                    {isDelaying && (
+                        <div className="absolute inset-0 z-10 bg-white/80 dark:bg-zinc-950/80 flex items-center justify-center">
+                            <div className="flex items-center gap-3 px-4 py-2 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-lg">
+                                <Loader2 className="h-4 w-4 animate-spin text-rose-600" />
+                                <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-zinc-700 dark:text-zinc-200">
+                                    Updating schedule & notifying client…
+                                </span>
+                            </div>
+                        </div>
+                    )}
                     <SheetHeader className="mb-8">
                         <SheetTitle className="text-2xl font-black text-cs-heading font-serif tracking-tight text-rose-600">Delay Milestone</SheetTitle>
                     </SheetHeader>
@@ -1848,7 +2042,14 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             </div>
                         )}
 
-                        <Button onClick={handleDelayMilestone} disabled={!delayForm.endDate || !delayForm.delayReason} className="w-full bg-rose-600 text-white hover:bg-rose-700 h-12 uppercase tracking-widest font-bold text-xs shadow-md">Confirm Delay & Notify</Button>
+                        <Button
+                            onClick={handleDelayMilestone}
+                            disabled={isDelaying || !delayForm.endDate || !delayForm.delayReason}
+                            className="w-full bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed h-12 uppercase tracking-widest font-bold text-xs shadow-md"
+                        >
+                            {isDelaying && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                            {isDelaying ? 'Updating…' : 'Confirm Delay & Notify'}
+                        </Button>
                     </div>
                 </SheetContent>
             </Sheet>
