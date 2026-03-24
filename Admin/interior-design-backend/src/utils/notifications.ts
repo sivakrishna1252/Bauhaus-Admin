@@ -18,10 +18,11 @@ const transporter = nodemailer.createTransport({
 export const sendDelayNotification = async (clientEmail: string, stepTitle: string, newDate: string, reason: string) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `Schedule Update: ${stepTitle}`,
         text: `The deadline for "${stepTitle}" has been updated to ${newDate}.\n\nReason: ${reason}\n\nThank you for your patience.`,
         html: `
@@ -55,13 +56,14 @@ export const sendDelayNotification = async (clientEmail: string, stepTitle: stri
 export const sendReviewRequestNotification = async (clientEmail: string, stepTitle: string, rejectCount?: number) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const isRevision = rejectCount && rejectCount > 0;
     const subject = isRevision ? `[Revision #${rejectCount}] Work Ready for Review: ${stepTitle}` : `New Work Ready for Review: ${stepTitle}`;
 
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: subject,
         text: `We have ${isRevision ? 'updated' : 'completed'} the work for "${stepTitle}". Please log in to your dashboard to review and provide feedback.`,
         html: `
@@ -91,10 +93,11 @@ export const sendReviewRequestNotification = async (clientEmail: string, stepTit
 export const sendPasswordResetNotification = async (email: string, resetLink: string) => {
     if (!email) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || email,
+        to: email,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `Password Reset Request - Bauhaus Spaces`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
@@ -119,7 +122,7 @@ export const sendPasswordResetNotification = async (email: string, resetLink: st
 }
 
 export const sendAdminFeedbackNotification = async (stepTitle: string, status: string, feedback: string, rejectCount?: number) => {
-    const adminEmail = process.env.SMTP_USER || 'sivatools1252@gmail.com';
+    const adminEmail = process.env.SMTP_USER;
     const isRejection = status === 'REJECTED';
     const isMultipleRejection = isRejection && rejectCount && rejectCount > 1;
 
@@ -186,10 +189,11 @@ function getOrdinalSuffix(i: number) {
 export const sendBulkScheduleUpdateNotification = async (clientEmail: string, projectTitle: string, updates: string, globalReason: string) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `Revised Project Timeline: ${projectTitle}`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
@@ -226,7 +230,7 @@ export const sendBulkScheduleUpdateNotification = async (clientEmail: string, pr
 export const sendProjectInitializedNotification = async (clientEmail: string, projectTitle: string, username?: string, pin?: string, milestonesHtml?: string) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const credentialSection = username ? `
         <div style="background-color: #FDFBF7; border: 1px solid #E5E7EB; border-radius: 8px; padding: 20px; margin: 20px 0;">
             <h4 style="margin: 0 0 15px 0; color: #1A1A1A; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;">Your Login Credentials:</h4>
@@ -248,7 +252,8 @@ export const sendProjectInitializedNotification = async (clientEmail: string, pr
 
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `WELCOME TO BAUHAUS: Your Project is Ready`,
         html: `
             <div style="font-family: 'Outfit', sans-serif, Arial; padding: 40px 20px; background-color: #F3F4F6;">
@@ -294,10 +299,11 @@ export const sendProjectInitializedNotification = async (clientEmail: string, pr
 export const sendNewMilestoneNotification = async (clientEmail: string, projectTitle: string, milestoneTitle: string) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `New Milestone Added: ${milestoneTitle}`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
@@ -325,10 +331,11 @@ export const sendNewMilestoneNotification = async (clientEmail: string, projectT
 export const sendClientWelcomeCredentials = async (clientEmail: string, username: string, pin: string) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `Welcome to Bauhaus Spaces – Your Account Credentials`,
         html: `
             <div style="font-family: 'Outfit', sans-serif, Arial; padding: 40px 20px; background-color: #F3F4F6;">
@@ -388,10 +395,11 @@ export const sendClientWelcomeCredentials = async (clientEmail: string, username
 export const sendClientPinUpdated = async (clientEmail: string, username: string, newPin: string) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `Your Bauhaus Spaces PIN Has Been Updated`,
         html: `
             <div style="font-family: 'Outfit', sans-serif, Arial; padding: 40px 20px; background-color: #F3F4F6;">
@@ -449,10 +457,11 @@ export const sendClientPinUpdated = async (clientEmail: string, username: string
 export const sendProjectCompletionSummary = async (clientEmail: string, projectTitle: string, summaryHtml: string, attachments?: any[]) => {
     if (!clientEmail) return;
 
-    const fromAddress = process.env.SMTP_USER || '"Bauhaus Spaces" <notifications@bauhausspaces.com>';
+    const fromAddress = process.env.SMTP_USER;
     const mailOptions = {
         from: fromAddress,
-        to: process.env.RECEIVER_EMAIL || clientEmail,
+        to: clientEmail,
+        bcc: process.env.RECEIVER_EMAIL,
         subject: `PROJECT COMPLETE: Final Summary for ${projectTitle}`,
         attachments: attachments,
         html: `
