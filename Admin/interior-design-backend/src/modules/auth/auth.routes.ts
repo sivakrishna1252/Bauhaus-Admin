@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { adminLogin, clientLogin, requestPasswordReset, resetPassword, unifiedLogin } from './auth.controller.js';
+import { adminLogin, clientLogin, requestPasswordReset, resetPassword, unifiedLogin, verifyOTP } from './auth.controller.js';
 
 const router = Router();
 
@@ -121,5 +121,30 @@ router.post('/request-reset', requestPasswordReset);
  *         description: Password updated
  */
 router.post('/reset-password', resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/verify-otp:
+ *   post:
+ *     summary: Verify OTP for Admin Login
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: OTP verified, login successful
+ *       401:
+ *         description: Invalid or expired OTP
+ */
+router.post('/verify-otp', verifyOTP);
 
 export default router;

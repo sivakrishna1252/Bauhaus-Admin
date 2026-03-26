@@ -81,6 +81,23 @@ export const resetPassword = async (token: string, newPassword: string) => {
     return await response.json();
 };
 
+export const verifyOTP = async (email: string, otp: string) => {
+    const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, otp })
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Verification failed');
+    }
+
+    return await response.json();
+};
+
 export const logout = () => {
     // Remove both admin and client keys to fully clear on explicit logout call
     localStorage.removeItem('admin_token');

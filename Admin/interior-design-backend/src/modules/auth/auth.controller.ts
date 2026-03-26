@@ -3,13 +3,13 @@ import { prisma } from '../../index.js';
 import { compareSecret, hashSecret } from '../../utils/hash.js';
 import { generateToken } from '../../utils/token.js';
 import crypto from 'crypto';
-import { sendPasswordResetNotification } from '../../utils/notifications.js';
+import { sendPasswordResetNotification, sendOTPNotification } from '../../utils/notifications.js';
 
 export const adminLogin = async (req: Request, res: Response) => {
     const { email, password } = req.body;
 
     try {
-        const admin = await prisma.admin.findUnique({ where: { email } });
+        const admin = await prisma.admin.findUnique({ where: { email } }) as any;
         if (!admin) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
@@ -19,8 +19,25 @@ export const adminLogin = async (req: Request, res: Response) => {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
 
-        const token = generateToken({ id: admin.id, role: 'ADMIN', email: admin.email });
-        res.json({ token, role: 'ADMIN' });
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // Expires in 10 minutes
+
+        await prisma.admin.update({
+            where: { id: admin.id },
+            data: {
+                otp,
+                otpExpiry
+            } as any
+        });
+
+        await sendOTPNotification(admin.email, otp);
+
+        res.json({ 
+            message: 'Verification code sent to email', 
+            step: 'OTP_REQUIRED', 
+            email: admin.email 
+        });
     } catch (error: any) {
         console.error("ADMIN LOGIN ERROR:", error);
         res.status(500).json({ message: 'Internal server error', error: { name: error.name, message: error.message, stack: error.stack } });
@@ -32,12 +49,27 @@ export const unifiedLogin = async (req: Request, res: Response) => {
 
     try {
         // 1. Try Admin by email
-        const admin = await prisma.admin.findUnique({ where: { email: identifier } });
+        const admin = await prisma.admin.findUnique({ where: { email: identifier } }) as any;
         if (admin) {
             const isMatch = await compareSecret(secret, admin.passwordHash);
             if (isMatch) {
-                const token = generateToken({ id: admin.id, role: 'ADMIN', email: admin.email });
-                return res.json({ token, role: 'ADMIN' });
+                // Generate 6-digit OTP for admin
+                const otp = Math.floor(100000 + Math.random() * 900000).toString();
+                const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+                await prisma.admin.update({
+                    where: { id: admin.id },
+                    data: { otp, otpExpiry } as any
+                });
+
+                await sendOTPNotification(admin.email, otp);
+
+                return res.json({ 
+                    message: 'Verification code sent to email', 
+                    step: 'OTP_REQUIRED', 
+                    email: admin.email,
+                    role: 'ADMIN' 
+                });
             }
         }
 
@@ -50,7 +82,7 @@ export const unifiedLogin = async (req: Request, res: Response) => {
             const isMatch = await compareSecret(secret, client.pinHash);
             if (isMatch) {
                 const token = generateToken({ id: client.id, role: 'CLIENT', username: client.username });
-                return res.json({ token, role: 'CLIENT' });
+                return res.json({ token, role: 'CLIENT', step: 'COMPLETED' });
             }
         }
 
@@ -58,6 +90,42 @@ export const unifiedLogin = async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error("ADMIN LOGIN ERROR:", error);
         res.status(500).json({ message: 'Internal server error', error: { name: error.name, message: error.message, stack: error.stack } });
+    }
+};
+
+export const verifyOTP = async (req: Request, res: Response) => {
+    const { email, otp } = req.body;
+
+    try {
+        const admin = await prisma.admin.findUnique({ where: { email } }) as any;
+
+        if (!admin || !admin.otp || !admin.otpExpiry) {
+            return res.status(400).json({ message: 'Invalid or expired OTP' });
+        }
+
+        if (admin.otp !== otp) {
+            return res.status(401).json({ message: 'Incorrect verification code' });
+        }
+
+        if (new Date() > admin.otpExpiry) {
+            return res.status(401).json({ message: 'Verification code has expired' });
+        }
+
+        // OTP is correct - clear it and generate final token
+        await prisma.admin.update({
+            where: { id: admin.id },
+            data: {
+                otp: null,
+                otpExpiry: null
+            } as any
+        });
+
+        const token = generateToken({ id: admin.id, role: 'ADMIN', email: admin.email });
+        res.json({ token, role: 'ADMIN', step: 'COMPLETED' });
+
+    } catch (error) {
+        console.error("OTP VERIFICATION ERROR:", error);
+        res.status(500).json({ message: 'Internal server error' });
     }
 };
 

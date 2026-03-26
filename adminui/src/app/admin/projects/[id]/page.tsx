@@ -1896,7 +1896,7 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             <label className="text-xs font-bold text-cs-heading uppercase tracking-widest">Type</label>
                             <Select value={milestoneForm.type} onValueChange={(v) => setMilestoneForm((p) => ({ ...p, type: v }))}>
                                 <SelectTrigger className="w-full bg-white border-cs-border h-11"><SelectValue /></SelectTrigger>
-                                <SelectContent><SelectItem value="DESIGN">Design Timeline</SelectItem><SelectItem value="PROJECT">Project Timeline</SelectItem></SelectContent>
+                                <SelectContent><SelectItem value="DESIGN">Design Timeline</SelectItem><SelectItem value="PROJECT">Execution Timeline</SelectItem></SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">

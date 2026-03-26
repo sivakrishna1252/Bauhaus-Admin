@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { unifiedLogin } from "@/services/authService";
+import { unifiedLogin, verifyOTP } from "@/services/authService";
 import Image from "next/image";
 import logo from "../assests/logo.png";
 
@@ -26,6 +26,9 @@ export default function UnifiedLoginPage() {
   const [identifier, setIdentifier] = useState("");
   const [secret, setSecret] = useState("");
   const [showSecret, setShowSecret] = useState(false);
+  const [step, setStep] = useState<"LOGIN" | "OTP">("LOGIN");
+  const [otp, setOtp] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -37,9 +40,30 @@ export default function UnifiedLoginPage() {
 
     try {
       const result = await unifiedLogin(identifier, secret);
-      login(result.token, result);
+      
+      if (result.step === "OTP_REQUIRED") {
+        setStep("OTP");
+        setAdminEmail(result.email || identifier);
+      } else {
+        login(result.token, result);
+      }
     } catch (err: any) {
       setError(err.message || "Invalid credentials. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleOTPVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const result = await verifyOTP(adminEmail, otp);
+      login(result.token, result);
+    } catch (err: any) {
+      setError(err.message || "Invalid code. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -63,65 +87,120 @@ export default function UnifiedLoginPage() {
 
         <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-10 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-[#C5A059]"></div>
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {error && (
-              <div className="p-4 bg-zinc-900 text-[#C5A059] text-[10px] font-bold uppercase tracking-widest rounded-xl animate-in fade-in duration-500 text-center">
-                {error}
-              </div>
-            )}
+          
+          {step === "LOGIN" ? (
+            <form onSubmit={handleSubmit} className="space-y-8">
+              {error && (
+                <div className="p-4 bg-zinc-900 text-[#C5A059] text-[10px] font-bold uppercase tracking-widest rounded-xl animate-in fade-in duration-500 text-center">
+                  {error}
+                </div>
+              )}
 
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                <User size={12} className="text-[#C5A059]" /> Email or Username
-              </label>
-              <Input
-                className="h-12 border-zinc-100 rounded-xl focus:ring-1 focus:ring-[#C5A059] font-bold tracking-widest bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700"
-                placeholder="Enter your credentials"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                required
-                autoCapitalize="none"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
-                <Lock size={12} className="text-[#C5A059]" /> Password or PIN
-              </label>
-              <div className="relative">
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                  <User size={12} className="text-[#C5A059]" /> Email or Username
+                </label>
                 <Input
-                  type={showSecret ? "text" : "password"}
-                  className="h-12 border-zinc-100 rounded-xl focus:ring-1 focus:ring-[#C5A059] font-bold bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 pr-12 tracking-widest"
-                  placeholder="••••••••"
-                  value={secret}
-                  onChange={(e) => setSecret(e.target.value)}
+                  className="h-12 border-zinc-100 rounded-xl focus:ring-1 focus:ring-[#C5A059] font-bold tracking-widest bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700"
+                  placeholder="Enter your credentials"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
                   required
+                  autoCapitalize="none"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowSecret(!showSecret)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-[#C5A059] transition-colors"
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
+                  <Lock size={12} className="text-[#C5A059]" /> Password or PIN
+                </label>
+                <div className="relative">
+                  <Input
+                    type={showSecret ? "text" : "password"}
+                    className="h-12 border-zinc-100 rounded-xl focus:ring-1 focus:ring-[#C5A059] font-bold bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700 pr-12 tracking-widest"
+                    placeholder="••••••••"
+                    value={secret}
+                    onChange={(e) => setSecret(e.target.value)}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSecret(!showSecret)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-[#C5A059] transition-colors"
+                  >
+                    {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full h-14 bg-zinc-900 hover:bg-[#C5A059] text-white font-bold uppercase tracking-widest text-[10px] transition-all rounded-xl shadow-lg flex items-center justify-center gap-3 group"
+              >
+                {isLoading ? (
+                  <Loader2 className="animate-spin h-5 w-5" />
+                ) : (
+                  <>
+                    <span>Enter System</span>
+                    <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleOTPVerify} className="space-y-8 animate-in slide-in-from-right duration-500">
+              <div className="text-center space-y-3">
+                <p className="text-sm font-black uppercase tracking-[0.25em] text-[#C5A059]">Verification Required</p>
+                <p className="text-base text-zinc-500 leading-relaxed">
+                  Code sent to <br/>
+                  <span className="text-zinc-900 dark:text-zinc-200 font-black">{adminEmail}</span>
+                </p>
+              </div>
+
+              {error && (
+                <div className="p-4 bg-red-50 text-red-600 text-[10px] font-bold uppercase tracking-widest rounded-xl animate-in fade-in duration-500 text-center border border-red-100">
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 flex items-center justify-center gap-2">
+                   Enter 6-digit Code
+                </label>
+                <Input
+                  className="h-16 text-3xl text-center border-zinc-100 rounded-xl focus:ring-2 focus:ring-[#C5A059] font-bold tracking-[0.5em] bg-zinc-50 dark:bg-zinc-800 dark:border-zinc-700"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-3">
+                <Button
+                  type="submit"
+                  disabled={isLoading || otp.length < 6}
+                  className="w-full h-14 bg-zinc-900 hover:bg-[#C5A059] text-white font-bold uppercase tracking-widest text-[10px] transition-all rounded-xl shadow-lg flex items-center justify-center gap-3"
                 >
-                  {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {isLoading ? (
+                    <Loader2 className="animate-spin h-5 w-5" />
+                  ) : (
+                    "Verify & Login"
+                  )}
+                </Button>
+                
+                <button
+                   type="button"
+                   onClick={() => setStep("LOGIN")}
+                   className="w-full text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-900 transition-colors py-2"
+                >
+                  Back to Login
                 </button>
               </div>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isLoading}
-              className="w-full h-14 bg-zinc-900 hover:bg-[#C5A059] text-white font-bold uppercase tracking-widest text-[10px] transition-all rounded-xl shadow-lg flex items-center justify-center gap-3 group"
-            >
-              {isLoading ? (
-                <Loader2 className="animate-spin h-5 w-5" />
-              ) : (
-                <>
-                  <span>Enter System</span>
-                  <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </>
-              )}
-            </Button>
-          </form>
+            </form>
+          )}
           <div className="mt-10 pt-8 border-t border-zinc-50 dark:border-zinc-800 text-center">
             <p className="text-[9px] text-zinc-300 uppercase tracking-widest font-bold flex items-center justify-center gap-2">
               <ShieldCheck size={12} className="text-[#C5A059]" />

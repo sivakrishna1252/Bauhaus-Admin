@@ -13,6 +13,8 @@ model Admin {
   createdAt        DateTime  @default(now())
   resetToken       String?
   resetTokenExpiry DateTime?
+  otp              String?
+  otpExpiry        DateTime?
 }
 
 model Client {

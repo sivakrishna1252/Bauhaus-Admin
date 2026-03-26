@@ -121,6 +121,46 @@ export const sendPasswordResetNotification = async (email: string, resetLink: st
     }
 }
 
+export const sendOTPNotification = async (email: string, otp: string) => {
+    if (!email) return;
+
+    const fromAddress = process.env.SMTP_USER;
+    const mailOptions = {
+        from: fromAddress,
+        to: email,
+        subject: `Login Verification Code: ${otp} - Bauhaus Spaces`,
+        html: `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
+                <div style="text-align: center; border-bottom: 2px solid #C5A059; padding-bottom: 20px; margin-bottom: 20px;">
+                    <h1 style="color: #1A1A1A; margin: 0; text-transform: uppercase; letter-spacing: 4px; font-weight: 300;">BAUHAUS</h1>
+                    <p style="color: #9CA3AF; margin: 5px 0 0 0; font-size: 10px; letter-spacing: 3px; text-transform: uppercase;">Spaces &amp; Interiors</p>
+                </div>
+                <div style="padding: 20px 0;">
+                    <p style="font-size: 16px; margin-bottom: 25px;">Hello,</p>
+                    <p style="font-size: 15px; line-height: 1.6; color: #4B5563;">Use the verification code below to complete your login to the admin panel. This code will expire in 10 minutes.</p>
+                    
+                    <div style="background-color: #FDFBF7; border: 2px solid #C5A059; border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0;">
+                        <span style="font-family: monospace; font-size: 36px; font-weight: bold; letter-spacing: 12px; color: #1A1A1A;">${otp}</span>
+                    </div>
+
+                    <p style="font-size: 13px; color: #9CA3AF; margin-top: 30px;">If you did not request this code, please secure your account immediately or contact support.</p>
+                </div>
+                <p style="font-size: 14px; color: #6B7280; margin-top: 30px; border-top: 1px solid #F3F4F6; padding-top: 20px;">
+                    Warm Regards,<br/>
+                    <strong style="color: #1A1A1A;">Bauhaus Admin System</strong>
+                </p>
+            </div>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`OTP email sent to ${email}`);
+    } catch (error) {
+        console.error('OTP Email failed:', error);
+    }
+}
+
 export const sendAdminFeedbackNotification = async (stepTitle: string, status: string, feedback: string, rejectCount?: number) => {
     const adminEmail = process.env.SMTP_USER;
     const isRejection = status === 'REJECTED';
