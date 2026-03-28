@@ -31,7 +31,9 @@ import {
     CloudUpload,
     AlertTriangle,
     AlertCircle,
-    Calendar
+    Calendar,
+    LayoutDashboard,
+    User
 } from "lucide-react";
 import {
     getProjectDetail,
@@ -50,6 +52,7 @@ import {
     clearProjectTimeline,
     summarizeProject,
     downloadProjectArchive,
+    updateProject,
     deleteProject
 } from "@/services/projectService";
 import type { EntryCategory, Project, ProjectEntry, MediaFile, TimelineStep, TimelineType } from "@/services/projectService";
@@ -116,6 +119,41 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
         description: ''
     });
     const [isDelaying, setIsDelaying] = useState(false);
+
+    const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
+    const [isUpdatingProject, setIsUpdatingProject] = useState(false);
+    const [editProjectData, setEditProjectData] = useState({ title: '', description: '', designer: '', principalDesigner: '' });
+
+    const handleEditProject = () => {
+        if (!project) return;
+        setEditProjectData({
+            title: project.title,
+            description: project.description,
+            designer: project.designer || '',
+            principalDesigner: project.principalDesigner || ''
+        });
+        setIsEditProjectOpen(true);
+    };
+
+    const handleUpdateProjectDetails = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsUpdatingProject(true);
+        try {
+            const updated = await updateProject(id, editProjectData);
+            setProject(prev => prev ? ({ ...prev, ...updated }) : prev);
+            setIsEditProjectOpen(false);
+            setStatusPopup({
+                open: true,
+                tone: 'success',
+                title: 'Project Updated',
+                description: 'General project information has been updated successfully.'
+            });
+        } catch (err: any) {
+            alert(err.message || 'Failed to update project');
+        } finally {
+            setIsUpdatingProject(false);
+        }
+    };
 
     useEffect(() => {
         const updateLine = () => {
@@ -810,9 +848,61 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                     >
                         <ArrowLeft size={16} className="mr-2 group-hover:-translate-x-1 transition-transform" /> Back to Catalog
                     </Link>
-                    <h1 className="text-4xl font-bold text-cs-heading dark:text-white">{project.title}</h1>
-                    <div className="flex items-center gap-3 mt-3">
-                        <span className="text-sm text-cs-text flex items-center gap-1.5"><Clock size={14} /> Last refined {new Date().toLocaleDateString()}</span>
+                    <div className="flex items-center gap-4">
+                        <h1 className="text-4xl font-bold text-cs-heading dark:text-white">{project.title}</h1>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleEditProject}
+                            className="h-8 w-8 p-0 rounded-full hover:bg-cs-primary-100/10 text-cs-primary-100"
+                        >
+                            <Edit size={16} />
+                        </Button>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-4">
+                        <div className="flex items-center gap-2">
+                             <div className="p-1.5 bg-cs-primary-100/10 rounded-lg">
+                                 <User size={14} className="text-cs-primary-100" />
+                             </div>
+                             <div className="flex flex-col">
+                                 <span className="text-[10px] font-black uppercase text-cs-text tracking-widest leading-none mb-0.5">Client</span>
+                                 <span className="text-sm font-bold text-cs-heading dark:text-white">{project.client.username}</span>
+                             </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-[#C5A059]/10 rounded-lg">
+                                <User size={14} className="text-[#C5A059]" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase text-cs-text tracking-widest leading-none mb-0.5">Lead Designer</span>
+                                <span className="text-sm font-bold text-cs-heading dark:text-white">
+                                    {project.designer || "Not Assigned"}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <div className="p-1.5 bg-[#C5A059]/10 rounded-lg">
+                                <User size={14} className="text-[#C5A059]" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase text-cs-text tracking-widest leading-none mb-0.5">Principal Designer</span>
+                                <span className="text-sm font-bold text-cs-heading dark:text-white">
+                                    {project.principalDesigner || "Not Assigned"}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                             <div className="p-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-lg">
+                                 <Calendar size={14} className="text-cs-text" />
+                             </div>
+                             <div className="flex flex-col">
+                                 <span className="text-[10px] font-black uppercase text-cs-text tracking-widest leading-none mb-0.5">Created On</span>
+                                 <span className="text-sm font-bold text-cs-heading dark:text-white">{new Date(project.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                             </div>
+                        </div>
                     </div>
                 </div>
 
@@ -2051,6 +2141,74 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                             {isDelaying ? 'Updating…' : 'Confirm Delay & Notify'}
                         </Button>
                     </div>
+                </SheetContent>
+            </Sheet>
+
+            {/* Edit Project Sheet */}
+            <Sheet open={isEditProjectOpen} onOpenChange={setIsEditProjectOpen}>
+                <SheetContent className="bg-cs-bg sm:max-w-md w-full border-cs-border">
+                    <SheetHeader className="mb-8">
+                        <SheetTitle className="text-2xl font-black text-cs-heading font-serif tracking-tight">Edit Project Info</SheetTitle>
+                        <SheetDescription className="text-cs-text italic text-sm mt-2">
+                            Update general project details and assign designers.
+                        </SheetDescription>
+                    </SheetHeader>
+                    <form onSubmit={handleUpdateProjectDetails} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-cs-heading uppercase tracking-widest">Project Title</label>
+                            <input 
+                                type="text" 
+                                value={editProjectData.title} 
+                                onChange={e => setEditProjectData({ ...editProjectData, title: e.target.value })} 
+                                className="w-full h-11 px-4 bg-white border border-cs-border rounded-xl text-sm" 
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-cs-heading uppercase tracking-widest">Description</label>
+                            <textarea 
+                                value={editProjectData.description} 
+                                onChange={e => setEditProjectData({ ...editProjectData, description: e.target.value })} 
+                                className="w-full min-h-[100px] p-4 bg-white border border-cs-border rounded-xl text-sm resize-none" 
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-cs-heading uppercase tracking-widest underline decoration-cs-primary-100 decoration-2">Lead Designer</label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cs-text" />
+                                <input 
+                                    type="text" 
+                                    value={editProjectData.designer} 
+                                    onChange={e => setEditProjectData({ ...editProjectData, designer: e.target.value })} 
+                                    className="w-full h-11 pl-10 pr-4 bg-white border border-cs-border rounded-xl text-sm font-bold" 
+                                    placeholder="Add full name"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-cs-heading uppercase tracking-widest underline decoration-cs-primary-100 decoration-2">Principal Designer</label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-cs-text" />
+                                <input 
+                                    type="text" 
+                                    value={editProjectData.principalDesigner} 
+                                    onChange={e => setEditProjectData({ ...editProjectData, principalDesigner: e.target.value })} 
+                                    className="w-full h-11 pl-10 pr-4 bg-white border border-cs-border rounded-xl text-sm font-bold" 
+                                    placeholder="Add full name"
+                                />
+                            </div>
+                        </div>
+
+                        <Button
+                            type="submit"
+                            disabled={isUpdatingProject}
+                            className="w-full bg-cs-primary-100 text-white hover:bg-cs-primary-200 h-12 uppercase tracking-widest font-bold text-xs shadow-md mt-4"
+                        >
+                            {isUpdatingProject ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            {isUpdatingProject ? 'Updating…' : 'Save Information'}
+                        </Button>
+                    </form>
                 </SheetContent>
             </Sheet>
 

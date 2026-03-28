@@ -114,7 +114,6 @@ export const getProjectDetail = async (req: AuthRequest, res: Response) => {
         res.status(500).json({ message: 'Internal server error' });
     }
 };
-
 // Admin: Update project status
 export const updateProjectStatus = async (req: AuthRequest, res: Response) => {
     const id = req.params.id as string;
@@ -127,6 +126,56 @@ export const updateProjectStatus = async (req: AuthRequest, res: Response) => {
         });
         res.json(project);
     } catch (error) {
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Admin: Update general project details
+export const updateProject = async (req: AuthRequest, res: Response) => {
+    const id = req.params.id as string;
+    const { title, description, status, designer, principalDesigner } = req.body;
+
+    try {
+        const project = await (prisma.project as any).update({
+            where: { id },
+            data: {
+                title,
+                description,
+                status,
+                designer,
+                principalDesigner
+            },
+        });
+        res.json(project);
+    } catch (error) {
+        console.error('Update Project Error:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Admin: Get designer-project assignments
+export const getDesignerAssignments = async (req: AuthRequest, res: Response) => {
+    try {
+        const projects = await (prisma.project as any).findMany({
+            select: {
+                id: true,
+                title: true,
+                designer: true,
+                principalDesigner: true,
+                status: true,
+                client: {
+                    select: {
+                        username: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+        res.json(projects);
+    } catch (error) {
+        console.error('Get Designer Assignments Error:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };

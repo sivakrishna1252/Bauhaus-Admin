@@ -6,6 +6,8 @@ import {
     deleteProject,
     getMyProjects,
     getProjectDetail,
+    updateProject,
+    getDesignerAssignments,
     summarizeAndEmailProject,
     archiveAndDownloadProject
 } from './project.controller.js';
@@ -63,6 +65,20 @@ router.get('/projects', authenticate('ADMIN'), getAllProjects);
 
 /**
  * @swagger
+ * /api/projects/assignments/designers:
+ *   get:
+ *     summary: Get all project designer assignments (Admin only)
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of projects with designer info
+ */
+router.get('/projects/assignments/designers', authenticate('ADMIN'), getDesignerAssignments);
+
+/**
+ * @swagger
  * /api/projects/{id}/status:
  *   patch:
  *     summary: Update project status (Admin only)
@@ -90,6 +106,43 @@ router.get('/projects', authenticate('ADMIN'), getAllProjects);
  *         description: Project status updated
  */
 router.patch('/projects/:id/status', authenticate('ADMIN'), updateProjectStatus);
+
+/**
+ * @swagger
+ * /api/projects/{id}:
+ *   patch:
+ *     summary: Update project details (Admin only)
+ *     tags: [Projects]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               status:
+ *                 type: string
+ *               designer:
+ *                 type: string
+ *               principalDesigner:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Project updated
+ */
+router.patch('/projects/:id', authenticate('ADMIN'), updateProject);
 
 /**
  * @swagger

@@ -86,11 +86,15 @@ export interface Project {
     clientId: string;
     finalDocumentUrl: string | null;
     isFinalized: boolean;
+    designer?: string;
+    principalDesigner?: string;
     client: {
         username: string;
     };
     entries: ProjectEntry[];
     timelineSteps: TimelineStep[];
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface ProjectData {
@@ -137,6 +141,33 @@ export const getProjectDetail = async (projectId: string) => {
 
     if (!response.ok) {
         throw new Error('Failed to fetch project details');
+    }
+
+    return await response.json();
+};
+
+export const getDesignerAssignments = async () => {
+    const response = await fetch(`${API_BASE_URL}/projects/assignments/designers`, {
+        headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch designer assignments');
+    }
+
+    return await response.json();
+};
+
+export const updateProject = async (projectId: string, projectData: Partial<ProjectData>) => {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(projectData)
+    });
+
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update project');
     }
 
     return await response.json();
