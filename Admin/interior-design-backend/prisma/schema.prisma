@@ -38,11 +38,13 @@ model Project {
   clientId         String
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-  finalDocumentUrl String?
-  isFinalized      Boolean        @default(false)
-  client           Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  entries          ProjectEntry[]
-  timelineSteps    TimelineStep[]
+  finalDocumentUrl  String?
+  isFinalized       Boolean        @default(false)
+  designer          String?
+  principalDesigner String?
+  client            Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  entries           ProjectEntry[]
+  timelineSteps     TimelineStep[]
 }
 
 model TimelineStep {

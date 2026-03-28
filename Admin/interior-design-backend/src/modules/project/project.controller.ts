@@ -29,7 +29,7 @@ const formatProjectEntries = (project: any) => {
 
 // Admin: Create a new project
 export const createProject = async (req: AuthRequest, res: Response) => {
-    const { title, description, clientId } = req.body;
+    const { title, description, clientId, designer, principalDesigner } = req.body;
 
     if (!title || !clientId) {
         return res.status(400).json({ message: 'Title and Client are required' });
@@ -42,11 +42,13 @@ export const createProject = async (req: AuthRequest, res: Response) => {
             return res.status(404).json({ message: 'Selected client does not exist' });
         }
 
-        const project = await prisma.project.create({
+        const project = await (prisma.project as any).create({
             data: {
                 title,
                 description,
                 clientId,
+                designer,
+                principalDesigner,
             },
         });
 

@@ -37,6 +37,8 @@ interface Project {
     client: {
         username: string;
     };
+    designer?: string;
+    principalDesigner?: string;
     entries?: any[];
     createdAt: string;
     updatedAt: string;
@@ -76,6 +78,8 @@ export default function ProjectsPage() {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [clientId, setClientId] = useState("");
+    const [designer, setDesigner] = useState("");
+    const [principalDesigner, setPrincipalDesigner] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState("");
     const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null);
@@ -113,7 +117,9 @@ export default function ProjectsPage() {
             const newProject = await createProject({
                 title,
                 description,
-                clientId
+                clientId,
+                designer,
+                principalDesigner
             });
 
             // Backend might not return the full project with client object, so we handle it
@@ -128,6 +134,8 @@ export default function ProjectsPage() {
             setTitle("");
             setDescription("");
             setClientId("");
+            setDesigner("");
+            setPrincipalDesigner("");
         } catch (err: any) {
             setFormError(err.message || "Failed to create project");
         } finally {
@@ -238,6 +246,33 @@ export default function ProjectsPage() {
                                 </div>
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-3">
+                                    <label className="text-sm font-medium text-cs-heading font-black underline">Designer</label>
+                                    <div className="relative">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cs-text" />
+                                        <Input
+                                            placeholder="Designer Name"
+                                            className="pl-12 h-11 border-cs-border font-bold"
+                                            value={designer}
+                                            onChange={(e) => setDesigner(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    <label className="text-sm font-medium text-cs-heading font-black underline">Principal Designer</label>
+                                    <div className="relative">
+                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-cs-text" />
+                                        <Input
+                                            placeholder="Principal Name"
+                                            className="pl-12 h-11 border-cs-border font-bold"
+                                            value={principalDesigner}
+                                            onChange={(e) => setPrincipalDesigner(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
                             <SheetFooter className="pt-4 px-0">
                                 <Button
                                     type="submit"
@@ -341,9 +376,24 @@ export default function ProjectsPage() {
                                     {project.title}
                                 </h3>
 
-                                <div className="flex items-center gap-2 text-sm text-cs-text dark:text-zinc-400 mb-6">
+                                <div className="flex items-center gap-2 text-sm text-cs-text dark:text-zinc-400 mb-4">
                                     <User size={14} className="text-cs-primary-100" />
                                     <span>{project.client.username}</span>
+                                </div>
+
+                                <div className="flex gap-4 text-[11px] text-cs-text dark:text-zinc-400 mb-6 border-t border-cs-border dark:border-zinc-800 pt-4">
+                                     {project.designer && (
+                                         <div className="flex flex-col">
+                                             <span className="font-bold text-cs-heading dark:text-zinc-200 uppercase text-[9px] mb-0.5">Designer</span>
+                                             <span>{project.designer}</span>
+                                         </div>
+                                     )}
+                                     {project.principalDesigner && (
+                                         <div className="flex flex-col">
+                                             <span className="font-bold text-cs-heading dark:text-zinc-200 uppercase text-[9px] mb-0.5">Principal Designer</span>
+                                             <span>{project.principalDesigner}</span>
+                                         </div>
+                                     )}
                                 </div>
 
 

@@ -97,6 +97,8 @@ export interface ProjectData {
     clientId: string;
     title: string;
     description: string;
+    designer?: string;
+    principalDesigner?: string;
 }
 
 export const createProject = async (projectData: ProjectData) => {
