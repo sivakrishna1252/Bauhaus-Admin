@@ -1175,12 +1175,19 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
 
                                                                                         {/* Admin Submission Part */}
                                                                                         <div className="space-y-3">
-                                                                                            <div className="flex items-center gap-2">
+                                                                                            <div className="flex items-center gap-2 flex-wrap">
                                                                                                 <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded ${isLatest ? 'bg-[#C5A059] text-white' : 'bg-zinc-100 text-zinc-400'}`}>
                                                                                                     Iteration {round + 1}
                                                                                                 </span>
                                                                                                 {(adminFiles.length > 0 || iterationObj?.adminFeedback) && (
                                                                                                     <span className="text-[10px] font-bold text-zinc-400 uppercase">Uploaded by Admin</span>
+                                                                                                )}
+                                                                                                {iterationObj?.createdAt && (
+                                                                                                    <span className="flex items-center gap-1 text-[9px] text-zinc-400 font-semibold bg-zinc-50 dark:bg-zinc-800 px-2 py-0.5 rounded-md border border-zinc-100 dark:border-zinc-700">
+                                                                                                        <Clock size={9} />
+                                                                                                        {new Date(iterationObj.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                                                        {new Date(iterationObj.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                    </span>
                                                                                                 )}
                                                                                             </div>
 
@@ -1230,11 +1237,17 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                                         {/* Client Feedback Part (History or Current Rejection) */}
                                                                                         {(round < step.rejectCount || (isLatest && step.status === 'REJECTED')) && (
                                                                                             <div className="pl-4 border-l-2 border-rose-100 dark:border-rose-900/30 py-2 space-y-4">
-                                                                                                <div className="flex items-center gap-2">
+                                                                                                <div className="flex items-center gap-2 flex-wrap">
                                                                                                     <div className="h-1.5 w-1.5 rounded-full bg-rose-500"></div>
                                                                                                     <span className="text-[9px] font-black uppercase tracking-widest text-rose-500">
                                                                                                         {isLatest ? 'Latest Feedback' : `Rejection Feedback #${round + 1}`}
                                                                                                     </span>
+                                                                                                    {iterationObj?.updatedAt && iterationObj?.status === 'REJECTED' && (
+                                                                                                        <span className="flex items-center gap-1 text-[9px] text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-900/30">
+                                                                                                            <X size={9} /> Rejected on {new Date(iterationObj.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                                                            {new Date(iterationObj.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                        </span>
+                                                                                                    )}
                                                                                                 </div>
                                                                                                 {(iterationObj?.clientFeedback || (isLatest && step.clientFeedback)) && (
                                                                                                     <p className="text-xs text-rose-700 dark:text-rose-400 italic leading-relaxed font-medium bg-rose-50/50 dark:bg-rose-950/20 p-3 rounded-lg border border-rose-100 dark:border-rose-900/40">
@@ -1282,6 +1295,12 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                                                                                     <div>
                                                                                         <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Finalized & Approved</p>
                                                                                         <p className="text-xs text-zinc-500 font-medium">All deliverables for this stage meet your standards.</p>
+                                                                                        {step.iterations?.find((it: any) => it.status === 'APPROVED')?.updatedAt && (
+                                                                                            <p className="flex items-center gap-1 text-[9px] text-emerald-600 font-bold mt-1">
+                                                                                                <Check size={9} /> Client approved on {new Date(step.iterations!.find((it: any) => it.status === 'APPROVED')!.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                                                at {new Date(step.iterations!.find((it: any) => it.status === 'APPROVED')!.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                            </p>
+                                                                                        )}
                                                                                     </div>
                                                                                 </div>
                                                                             )}

@@ -13,9 +13,11 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
     },
+
 });
 
-export const sendDelayNotification = async (clientEmail: string, stepTitle: string, newDate: string, reason: string) => {
+
+export const sendDelayNotification = async (clientEmail: string, projectTitle: string, stepTitle: string, newDate: string, reason: string) => {
     if (!clientEmail) return;
 
     const fromAddress = process.env.SMTP_USER;
@@ -23,16 +25,17 @@ export const sendDelayNotification = async (clientEmail: string, stepTitle: stri
         from: fromAddress,
         to: clientEmail,
         bcc: process.env.RECEIVER_EMAIL,
-        subject: `Schedule Update: ${stepTitle}`,
-        text: `The deadline for "${stepTitle}" has been updated to ${newDate}.\n\nReason: ${reason}\n\nThank you for your patience.`,
+        subject: `[${projectTitle}] Schedule Update: ${stepTitle}`,
+        text: `The deadline for "${stepTitle}" in project "${projectTitle}" has been updated to ${newDate}.\n\nReason: ${reason}\n\nThank you for your patience.`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
                 <div style="text-align: center; border-bottom: 2px solid #C5A059; padding-bottom: 20px; margin-bottom: 20px;">
                     <h2 style="color: #C5A059; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Timeline Update</h2>
                 </div>
                 <p style="font-size: 16px;">Hello,</p>
-                <p style="font-size: 15px; line-height: 1.6;">We wanted to inform you that the schedule for <strong>${stepTitle}</strong> has been adjusted to ensure our quality standards are met.</p>
+                <p style="font-size: 15px; line-height: 1.6;">We wanted to inform you that the schedule for <strong>${stepTitle}</strong> in project <strong>${projectTitle}</strong> has been adjusted to ensure our quality standards are met.</p>
                 <div style="background-color: #FDFBF7; border: 1px solid #E5E7EB; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 0; margin-bottom: 10px;"><strong>Project:</strong> <span style="font-weight: bold;">${projectTitle}</span></p>
                     <p style="margin: 0; margin-bottom: 10px;"><strong>New Completion Date:</strong> <span style="color: #C5A059; font-weight: bold;">${newDate}</span></p>
                     <p style="margin: 0; margin-bottom: 5px;"><strong>Reason:</strong> ${reason.includes('(Note:') ? reason.split('(Note:')[0] : reason}</p>
                     ${reason.includes('(Note:') ? `
@@ -53,26 +56,26 @@ export const sendDelayNotification = async (clientEmail: string, stepTitle: stri
     }
 };
 
-export const sendReviewRequestNotification = async (clientEmail: string, stepTitle: string, rejectCount?: number) => {
+export const sendReviewRequestNotification = async (clientEmail: string, projectTitle: string, stepTitle: string, rejectCount?: number) => {
     if (!clientEmail) return;
 
     const fromAddress = process.env.SMTP_USER;
     const isRevision = rejectCount && rejectCount > 0;
-    const subject = isRevision ? `[Revision #${rejectCount}] Work Ready for Review: ${stepTitle}` : `New Work Ready for Review: ${stepTitle}`;
+    const subject = isRevision ? `[${projectTitle}] [Revision #${rejectCount}] Work Ready for Review: ${stepTitle}` : `[${projectTitle}] New Work Ready for Review: ${stepTitle}`;
 
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
         bcc: process.env.RECEIVER_EMAIL,
         subject: subject,
-        text: `We have ${isRevision ? 'updated' : 'completed'} the work for "${stepTitle}". Please log in to your dashboard to review and provide feedback.`,
+        text: `We have ${isRevision ? 'updated' : 'completed'} the work for "${stepTitle}" in project "${projectTitle}". Please log in to your dashboard to review and provide feedback.`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
                 <div style="text-align: center; border-bottom: 2px solid #C5A059; padding-bottom: 20px; margin-bottom: 20px;">
                     <h2 style="color: #C5A059; margin: 0; text-transform: uppercase; letter-spacing: 2px;">Review Requested</h2>
                 </div>
                 <p style="font-size: 16px;">Hello,</p>
-                <p style="font-size: 15px; line-height: 1.6;">${isRevision ? `We have finalized the revisions for <strong>${stepTitle}</strong> (Round ${rejectCount + 1}).` : `Exciting news! The work for <strong>${stepTitle}</strong> is now ready for your professional review and feedback.`}</p>
+                <p style="font-size: 15px; line-height: 1.6;">${isRevision ? `We have finalized the revisions for <strong>${stepTitle}</strong> in project <strong>${projectTitle}</strong> (Round ${rejectCount + 1}).` : `Exciting news! The work for <strong>${stepTitle}</strong> in project <strong>${projectTitle}</strong> is now ready for your professional review and feedback.`}</p>
                 <p style="font-size: 15px; line-height: 1.6; color: #6B7280;">Please log in to your portal to inspect the latest updates and provide your approval or requests for revision.</p>
                 <div style="text-align: center; margin: 35px 0;">
                     <a href="${process.env.CLIENT_PORTAL_URL || 'http://localhost:5003'}" style="background-color: #C5A059; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; box-shadow: 0 4px 15px rgba(197, 160, 89, 0.4);">Open Portal</a>
@@ -161,18 +164,18 @@ export const sendOTPNotification = async (email: string, otp: string) => {
     }
 }
 
-export const sendAdminFeedbackNotification = async (stepTitle: string, status: string, feedback: string, rejectCount?: number) => {
+export const sendAdminFeedbackNotification = async (projectTitle: string, stepTitle: string, status: string, feedback: string, rejectCount?: number) => {
     const adminEmail = process.env.SMTP_USER;
     const isRejection = status === 'REJECTED';
     const isMultipleRejection = isRejection && rejectCount && rejectCount > 1;
 
-    let subject = `Client Feedback: ${stepTitle} [${status}]`;
+    let subject = `[${projectTitle}] Client Feedback: ${stepTitle} [${status}]`;
     if (isMultipleRejection) {
-        subject = `⚠️ REJECTED AGAIN (${rejectCount}x): ${stepTitle}`;
+        subject = `⚠️ [${projectTitle}] REJECTED AGAIN (${rejectCount}x): ${stepTitle}`;
     } else if (isRejection) {
-        subject = `❌ STAGE REJECTED: ${stepTitle}`;
+        subject = `❌ [${projectTitle}] STAGE REJECTED: ${stepTitle}`;
     } else {
-        subject = `✅ STAGE APPROVED: ${stepTitle}`;
+        subject = `✅ [${projectTitle}] STAGE APPROVED: ${stepTitle}`;
     }
 
     const mailOptions = {
@@ -189,13 +192,14 @@ export const sendAdminFeedbackNotification = async (stepTitle: string, status: s
                 <p style="font-size: 16px;">Hello Team,</p>
                 <p style="font-size: 15px; line-height: 1.6;">
                     ${isMultipleRejection
-                ? `Unfortunately, the client has <strong>rejected</strong> the milestone <strong>${stepTitle}</strong> again. This is the <strong>${rejectCount}${getOrdinalSuffix(rejectCount)}</strong> time this stage has been rejected.`
+                ? `Unfortunately, the client has <strong>rejected</strong> the milestone <strong>${stepTitle}</strong> for project <strong>${projectTitle}</strong> again. This is the <strong>${rejectCount}${getOrdinalSuffix(rejectCount)}</strong> time this stage has been rejected.`
                 : isRejection
-                    ? `The client has requested revisions for the milestone: <strong>${stepTitle}</strong>.`
-                    : `Great news! The client has <strong>approved</strong> the milestone: <strong>${stepTitle}</strong>.`
+                    ? `The client has requested revisions for the milestone: <strong>${stepTitle}</strong> in project <strong>${projectTitle}</strong>.`
+                    : `Great news! The client has <strong>approved</strong> the milestone: <strong>${stepTitle}</strong> for project <strong>${projectTitle}</strong>.`
             }
                 </p>
                 <div style="background-color: ${isRejection ? '#FFF5F5' : '#FDFBF7'}; border: 1px solid ${isRejection ? '#FEB2B2' : '#E5E7EB'}; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 0; margin-bottom: 10px;"><strong>Project:</strong> <span style="font-weight: bold;">${projectTitle}</span></p>
                     <p style="margin: 0; margin-bottom: 10px;"><strong>Status:</strong> <span style="color: ${status === 'APPROVED' ? '#10B981' : '#EF4444'}; font-weight: bold;">${status}</span></p>
                     ${isRejection && rejectCount ? `<p style="margin: 0; margin-bottom: 10px;"><strong>Rejection Count:</strong> <span style="color: #EF4444; font-weight: bold;">${rejectCount}</span></p>` : ''}
                     <p style="margin: 0;"><strong>Client Feedback:</strong> <br/><i style="color: #4A5568;">"${feedback || 'No comments provided.'}"</i></p>
@@ -344,7 +348,7 @@ export const sendNewMilestoneNotification = async (clientEmail: string, projectT
         from: fromAddress,
         to: clientEmail,
         bcc: process.env.RECEIVER_EMAIL,
-        subject: `New Milestone Added: ${milestoneTitle}`,
+        subject: `[${projectTitle}] New Milestone Added: ${milestoneTitle}`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
                 <div style="text-align: center; border-bottom: 2px solid #C5A059; padding-bottom: 20px; margin-bottom: 20px;">

@@ -568,7 +568,7 @@ export default function ClientDashboard() {
                                                                                     }`}></div>
 
                                                                                 {/* Iteration Header Badge */}
-                                                                                <div className="flex items-center gap-2">
+                                                                                <div className="flex items-center gap-2 flex-wrap">
                                                                                     <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-lg ${isLatest ? 'bg-zinc-900 text-white dark:bg-zinc-800' : 'bg-zinc-100 text-zinc-400 dark:bg-zinc-900/50'
                                                                                         }`}>
                                                                                         Iteration {roundNum}
@@ -578,6 +578,13 @@ export default function ClientDashboard() {
                                                                                                 iteration.status === 'REJECTED' ? 'text-rose-500' : 'text-amber-500'
                                                                                             }`}>
                                                                                             • {iteration.status.replace('_', ' ')}
+                                                                                        </span>
+                                                                                    )}
+                                                                                    {iteration.createdAt && (
+                                                                                        <span className="flex items-center gap-1 text-[9px] text-zinc-400 font-semibold bg-zinc-50 dark:bg-zinc-800/60 px-2 py-0.5 rounded-full border border-zinc-100 dark:border-zinc-700">
+                                                                                            <Clock size={9} />
+                                                                                            {new Date(iteration.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                                            {new Date(iteration.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                                         </span>
                                                                                     )}
                                                                                 </div>
@@ -631,8 +638,20 @@ export default function ClientDashboard() {
                                                                                 {/* Client Feedback Content */}
                                                                                 {(clientFeedback || clientFiles.length > 0) && (
                                                                                     <div className="mt-6 pl-6 border-l-2 border-zinc-100 dark:border-zinc-800 pt-2 space-y-4">
-                                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                                                             <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Client Interaction</span>
+                                                                                            {iteration.status === 'REJECTED' && iteration.updatedAt && (
+                                                                                                <span className="flex items-center gap-1 text-[9px] text-rose-400 font-bold bg-rose-50 dark:bg-rose-950/20 px-2 py-0.5 rounded-full border border-rose-100 dark:border-rose-900/30">
+                                                                                                    <X size={9} /> Rejected • {new Date(iteration.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                                                    {new Date(iteration.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                </span>
+                                                                                            )}
+                                                                                            {iteration.status === 'APPROVED' && iteration.updatedAt && (
+                                                                                                <span className="flex items-center gap-1 text-[9px] text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-900/30">
+                                                                                                    <Check size={9} /> Approved • {new Date(iteration.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                                                    {new Date(iteration.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                                </span>
+                                                                                            )}
                                                                                         </div>
 
                                                                                         {clientFeedback && (
@@ -684,6 +703,12 @@ export default function ClientDashboard() {
                                                                         <div>
                                                                             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-emerald-600">Milestone Successfully Approved</p>
                                                                             <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">This phase is complete and work on the next stage has priority.</p>
+                                                                            {step.iterations?.find((it: any) => it.status === 'APPROVED')?.updatedAt && (
+                                                                                <p className="flex items-center gap-1 text-[9px] text-emerald-600 font-bold mt-1.5">
+                                                                                    <Check size={9} /> You approved on {new Date(step.iterations!.find((it: any) => it.status === 'APPROVED')!.updatedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}{' '}
+                                                                                    at {new Date(step.iterations!.find((it: any) => it.status === 'APPROVED')!.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                                </p>
+                                                                            )}
                                                                         </div>
                                                                     </div>
                                                                 )}

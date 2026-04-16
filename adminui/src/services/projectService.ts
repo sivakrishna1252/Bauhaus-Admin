@@ -39,6 +39,7 @@ export interface TimelineStepIteration {
     clientFeedback: string | null;
     status: TimelineStepStatus;
     createdAt: string;
+    updatedAt: string;
 }
 
 export interface TimelineStepDelay {

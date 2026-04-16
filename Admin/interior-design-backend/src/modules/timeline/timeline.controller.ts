@@ -121,6 +121,7 @@ export const updateTimelineStep = async (req: AuthRequest, res: Response) => {
             const formattedDate = new Date(updatedStep.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
             await sendDelayNotification(
                 (step as any).project.client.email,
+                (step as any).project.title,
                 updatedStep.title,
                 formattedDate,
                 `${delayReason || 'Schedule update'} (Note: This is the ${dCount === 2 ? '2nd' : dCount + 'th'} time this stage has been delayed)`
@@ -190,6 +191,7 @@ export const completeTimelineStep = async (req: AuthRequest, res: Response) => {
         if (updatedStep.project?.client?.email) {
             await sendReviewRequestNotification(
                 updatedStep.project.client.email,
+                updatedStep.project.title,
                 updatedStep.title,
                 updatedStep.rejectCount
             );
@@ -308,7 +310,7 @@ export const feedbackTimelineStep = async (req: AuthRequest, res: Response) => {
         }
 
         // Notify admin about feedback
-        await sendAdminFeedbackNotification(updatedStep.title, status, clientFeedback, updatedStep.rejectCount);
+        await sendAdminFeedbackNotification(updatedStep.project.title, updatedStep.title, status, clientFeedback, updatedStep.rejectCount);
 
         res.json(updatedStep);
     } catch (error) {
