@@ -24,7 +24,6 @@ export const sendDelayNotification = async (clientEmail: string, projectTitle: s
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `[${projectTitle}] Schedule Update: ${stepTitle}`,
         text: `The deadline for "${stepTitle}" in project "${projectTitle}" has been updated to ${newDate}.\n\nReason: ${reason}\n\nThank you for your patience.`,
         html: `
@@ -66,7 +65,6 @@ export const sendReviewRequestNotification = async (clientEmail: string, project
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: subject,
         text: `We have ${isRevision ? 'updated' : 'completed'} the work for "${stepTitle}" in project "${projectTitle}". Please log in to your dashboard to review and provide feedback.`,
         html: `
@@ -100,7 +98,6 @@ export const sendPasswordResetNotification = async (email: string, resetLink: st
     const mailOptions = {
         from: fromAddress,
         to: email,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `Password Reset Request - Bauhaus Spaces`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
@@ -237,7 +234,6 @@ export const sendBulkScheduleUpdateNotification = async (clientEmail: string, pr
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `Revised Project Timeline: ${projectTitle}`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
@@ -297,7 +293,6 @@ export const sendProjectInitializedNotification = async (clientEmail: string, pr
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `WELCOME TO BAUHAUS: Your Project is Ready`,
         html: `
             <div style="font-family: 'Outfit', sans-serif, Arial; padding: 40px 20px; background-color: #F3F4F6;">
@@ -347,7 +342,6 @@ export const sendNewMilestoneNotification = async (clientEmail: string, projectT
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `[${projectTitle}] New Milestone Added: ${milestoneTitle}`,
         html: `
             <div style="font-family: sans-serif; padding: 20px; border: 1px solid #1A1A1A; border-radius: 10px; max-width: 600px; margin: 0 auto; color: #1A1A1A;">
@@ -379,7 +373,6 @@ export const sendClientWelcomeCredentials = async (clientEmail: string, username
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `Welcome to Bauhaus Spaces – Your Account Credentials`,
         html: `
             <div style="font-family: 'Outfit', sans-serif, Arial; padding: 40px 20px; background-color: #F3F4F6;">
@@ -443,7 +436,6 @@ export const sendClientPinUpdated = async (clientEmail: string, username: string
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `Your Bauhaus Spaces PIN Has Been Updated`,
         html: `
             <div style="font-family: 'Outfit', sans-serif, Arial; padding: 40px 20px; background-color: #F3F4F6;">
@@ -505,7 +497,6 @@ export const sendProjectCompletionSummary = async (clientEmail: string, projectT
     const mailOptions = {
         from: fromAddress,
         to: clientEmail,
-        bcc: process.env.RECEIVER_EMAIL,
         subject: `PROJECT COMPLETE: Final Summary for ${projectTitle}`,
         attachments: attachments,
         html: `
