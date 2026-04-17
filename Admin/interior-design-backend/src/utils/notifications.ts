@@ -202,7 +202,7 @@ export const sendAdminFeedbackNotification = async (projectTitle: string, stepTi
                     <p style="margin: 0;"><strong>Client Feedback:</strong> <br/><i style="color: #4A5568;">"${feedback || 'No comments provided.'}"</i></p>
                 </div>
                 <div style="text-align: center; margin-top: 30px;">
-                    <a href="${process.env.ADMIN_PORTAL_URL || 'http://localhost:5002'}" style="background-color: #1A1A1A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">View Project Dashboard</a>
+                    <a href="${process.env.ADMIN_PORTAL_URL || 'https://www.pm.bauhauspaces.com'}" style="background-color: #1A1A1A; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 13px;">View Project Dashboard</a>
                 </div>
                 <p style="font-size: 14px; color: #6B7280; margin-top: 30px; border-top: 1px solid #EEE; padding-top: 20px;">Best Regards,<br/><strong>Bauhaus System</strong></p>
             </div>
@@ -314,7 +314,7 @@ export const sendProjectInitializedNotification = async (clientEmail: string, pr
                         <p style="color: #4B5563; font-size: 15px; line-height: 1.6;">You can log in to your personal portal to track progress, review design concepts, and provide real-time feedback as we move through each stage.</p>
 
                         <div style="text-align: center; margin: 40px 0;">
-                            <a href="${process.env.CLIENT_PORTAL_URL || 'http://localhost:5003'}" style="background-color: #C5A059; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px; display: inline-block; transition: background 0.3s; box-shadow: 0 4px 14px rgba(197, 160, 89, 0.4);">Access Project Portal</a>
+                            <a href="${process.env.CLIENT_PORTAL_URL || 'https://www.pm.bauhauspaces.com'}" style="background-color: #C5A059; color: white; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; text-transform: uppercase; font-size: 13px; letter-spacing: 1.5px; display: inline-block; transition: background 0.3s; box-shadow: 0 4px 14px rgba(197, 160, 89, 0.4);">Access Project Portal</a>
                         </div>
 
                         <p style="font-size: 14px; color: #9CA3AF; margin-top: 40px; border-top: 1px solid #F3F4F6; padding-top: 20px;">
